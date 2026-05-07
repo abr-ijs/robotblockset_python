@@ -1,0 +1,125 @@
+<!-- ======================================================
+	MuJoCo model
+	
+	Model   : MiR 100 
+	Author  : Leon Zlajpah
+
+	Copyright 2025 IJS 
+
+====================================================== -->
+<mujoco model="MiR100">
+  <compiler angle="radian" meshdir="assets/" autolimits="true"/>  
+  
+  <option integrator="implicitfast" impratio="10"/>
+    
+  <default>
+    <default class="mir">
+      <material specular="0.5" shininess="0.25"/>
+      <joint armature="0.1" damping="1" axis="0 0 1" limited="false"/>
+      <geom contype="0" conaffinity="1" group="0"/>
+      <site group="1" size="0.01" rgba="1 0 0 1"/>
+
+      <default class="visual">
+        <geom type="mesh" contype="0" conaffinity="0" group="2"/>
+      </default>
+      <default class="collision">
+        <geom type="mesh" contype="0" conaffinity="1" group="3"/>
+      </default>
+    </default>
+  </default>
+
+  <asset>
+    <material class="mir" name="white" rgba="1 1 1 1"/>
+    <material class="mir" name="off_white" rgba="0.901961 0.921569 0.929412 1"/>
+    <material class="mir" name="black" rgba="0.1 0.1 0.1 1"/>
+    <material class="mir" name="green" rgba="0 1 0 1"/>
+    <material class="mir" name="light_gray" rgba="0.79 0.82 0.93 1"/>
+
+    <!-- Collision meshes -->
+    <mesh name="mir_100_base_c" file="MiR100/mir_100_base_c.stl"/>
+    <mesh name="caster_wheel_base_c" file="MiR100/caster_wheel_base_c.stl"/>
+    
+    <!-- Visual meshes -->
+    <mesh name="mir_100_base" file="MiR100/mir_100_base.stl"/>
+    <mesh name="sick_lms-100" file="MiR100/sick_lms-100.stl"/>
+    <mesh name="caster_wheel_base" file="MiR100/caster_wheel_base.stl"/>
+    
+  </asset>
+
+  <worldbody>
+    <body name="base"  pos="0 0 0" axisangle="0 0 1 0" childclass="mir">  
+      <site group="2" type="cylinder" pos="0.25 0 0  " quat="0.70711 0 0.70711 0" size="0.01 0.25" rgba="1 0 0 1"/>
+      <site group="2" type="cylinder" pos="0 0.25 0  " quat="0.70711 0.70711 0 0" size="0.01 0.25" rgba="0 1 0 1"/>
+      <site group="2" type="cylinder" pos="0 0   0.25" quat="1 0 0 0"             size="0.01 0.25" rgba="0 0 1 1"/>
+      
+      <!--inertial pos="0 0 0" mass="1e-10" diaginertia="1e-10 1e-10 1e-10" /-->
+      <joint type="free" limited="false" />
+
+      <geom pos="0.037646 0 0" quat="1 0 0 0" type="mesh" material="white" mesh="mir_100_base" class="visual"/>
+      <geom pos="0.429646 0.2358 0.1914" quat="0 0.92388 0.382683 0" type="mesh" material="black" mesh="sick_lms-100" class="visual"/>
+      <geom pos="-0.354354 -0.2358 0.1914" quat="0 0.382683 -0.92388 0" type="mesh" material="black" mesh="sick_lms-100" class="visual"/>
+      <geom pos="0.037646 0 0" quat="1 0 0 0" type="mesh" material="white" mesh="mir_100_base_c" class="collision"/>
+      <body name="right_wheel_link" pos="0 -0.222604 0.0625">
+        <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="1" diaginertia="0.00195312 0.0010619 0.0010619"/>
+        <joint name="joint1" pos="0 0 0" axis="0 1 0" actuatorfrcrange="-100 100"/>
+        <geom group="1" size="0.0625 0.016" quat="0.707107 0.707107 0 0" type="cylinder" material="black"/>
+        <site pos="0 0 -0.0625"/>
+      </body>
+      <body name="left_wheel_link" pos="0 0.222604 0.0625">
+        <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="1" diaginertia="0.00195312 0.0010619 0.0010619"/>
+        <joint name="joint2" pos="0 0 0" axis="0 1 0" actuatorfrcrange="-100 100"/>
+        <geom group="1" size="0.0625 0.016" quat="0.707107 0.707107 0 0" type="cylinder" material="black"/>
+        <site pos="0 0 -0.0625"/>
+      </body>
+      <body name="fl_caster_rotation_link" pos="0.341346 0.203 0.1565">
+        <inertial pos="0 0 -0.0425" mass="0.309754" diaginertia="0.000584452 0.000528726 0.000179236"/>
+        <joint name="fl_caster_rotation_joint" pos="0 0 0" axis="0 0 1" damping="0.01"/>
+        <geom type="mesh" material="light_gray" mesh="caster_wheel_base" class="visual"/>
+        <geom type="mesh" material="light_gray" mesh="caster_wheel_base_c" class="collision"/>
+        <body name="fl_caster_wheel_link" pos="-0.0382 0 -0.094">
+          <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="1" diaginertia="0.00195312 0.0010619 0.0010619"/>
+          <joint name="fl_caster_wheel_joint" pos="0 0 0" axis="0 1 0"/>
+          <geom size="0.0625 0.016" quat="0.707107 0.707107 0 0" type="cylinder" material="black"/>
+        </body>
+      </body>
+      <body name="fr_caster_rotation_link" pos="0.341346 -0.203 0.1565">
+        <inertial pos="0 0 -0.0425" mass="0.309754" diaginertia="0.000584452 0.000528726 0.000179236"/>
+        <joint name="fr_caster_rotation_joint" pos="0 0 0" axis="0 0 1" damping="0.01"/>
+        <geom type="mesh" material="light_gray" mesh="caster_wheel_base" class="visual"/>
+        <geom type="mesh" material="light_gray" mesh="caster_wheel_base_c" class="collision"/>
+        <body name="fr_caster_wheel_link" pos="-0.0382 0 -0.094">
+          <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="1" diaginertia="0.00195312 0.0010619 0.0010619"/>
+          <joint name="fr_caster_wheel_joint" pos="0 0 0" axis="0 1 0"/>
+          <geom group="1" size="0.0625 0.016" quat="0.707107 0.707107 0 0" type="cylinder" material="black"/>
+        </body>
+      </body>
+      <body name="bl_caster_rotation_link" pos="-0.270154 0.203 0.1565">
+        <inertial pos="0 0 -0.0425" mass="0.309754" diaginertia="0.000584452 0.000528726 0.000179236"/>
+        <joint name="bl_caster_rotation_joint" pos="0 0 0" axis="0 0 1" damping="0.01"/>
+        <geom type="mesh" material="light_gray" mesh="caster_wheel_base" class="visual"/>
+        <geom type="mesh" material="light_gray" mesh="caster_wheel_base_c" class="collision"/>
+        <body name="bl_caster_wheel_link" pos="-0.0382 0 -0.094">
+          <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="1" diaginertia="0.00195312 0.0010619 0.0010619"/>
+          <joint name="bl_caster_wheel_joint" pos="0 0 0" axis="0 1 0"/>
+          <geom group="1" size="0.0625 0.016" quat="0.707107 0.707107 0 0" type="cylinder" material="black"/>
+        </body>
+      </body>
+      <body name="br_caster_rotation_link" pos="-0.270154 -0.203 0.1565">
+        <inertial pos="0 0 -0.0425" mass="0.309754" diaginertia="0.000584452 0.000528726 0.000179236"/>
+        <joint name="br_caster_rotation_joint" pos="0 0 0" axis="0 0 1" damping="0.01"/>
+        <geom type="mesh" material="light_gray" mesh="caster_wheel_base" class="visual"/>
+        <geom type="mesh" material="light_gray" mesh="caster_wheel_base_c" class="collision"/>
+        <body name="br_caster_wheel_link" pos="-0.0382 0 -0.094">
+          <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="1" diaginertia="0.00195312 0.0010619 0.0010619"/>
+          <joint name="br_caster_wheel_joint" pos="0 0 0" axis="0 1 0"/>
+          <geom group="1" size="0.0625 0.016" quat="0.707107 0.707107 0 0" type="cylinder" material="black"/>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+  
+  <actuator>
+    <velocity class="mir" name="actuator1" joint="joint1" kv="1000" ctrlrange="-4.8 24"/>
+    <velocity class="mir" name="actuator2" joint="joint2" kv="1000" ctrlrange="-4.8 24"/>
+  </actuator>  
+</mujoco>

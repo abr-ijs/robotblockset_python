@@ -1,0 +1,497 @@
+<mujoco model="inspection_scene">
+  <compiler angle="radian" meshdir="assets/" texturedir="assets/"/>
+
+  <option timestep="0.0002" integrator="implicitfast"/>
+
+  <size nkey="1"/>
+
+  <visual>
+    <global offwidth="1280" offheight="960"/>
+  </visual>
+
+  <default>
+    <default class="ur10e_main">
+      <default class="ur10e_robot">
+        <material shininess="0.25"/>
+        <joint range="-6.28319 6.28319" armature="0.1"/>
+        <site size="0.001 0.005 0.005" group="4" rgba="0.5 0.5 0.5 0.3"/>
+        <general ctrlrange="-6.2831 6.2831" biastype="affine" gainprm="5000" biasprm="0 -5000 -500"/>
+        <default class="ur10e_size4">
+          <joint damping="10"/>
+          <general forcerange="-330 330"/>
+        </default>
+        <default class="ur10e_size3">
+          <joint damping="5"/>
+          <general forcerange="-150 150"/>
+          <default class="ur10e_size3_limited">
+            <joint range="-3.1415 3.1415"/>
+            <general ctrlrange="-3.1415 3.1415"/>
+          </default>
+        </default>
+        <default class="ur10e_size2">
+          <joint damping="2"/>
+          <general forcerange="-56 56"/>
+        </default>
+        <default class="ur10e_visual">
+          <geom type="mesh" contype="0" conaffinity="0" group="2"/>
+        </default>
+        <default class="ur10e_collision">
+          <geom type="cylinder" group="3" rgba="0.2 0.2 0 1"/>
+        </default>
+      </default>
+    </default>
+    <default class="ur10e_gripper_main">
+      <default class="ur10e_gripper_2f85">
+        <mesh scale="0.001 0.001 0.001"/>
+        <general biastype="affine"/>
+        <default class="ur10e_gripper_driver">
+          <joint solreflimit="0.005" solimplimit="0.95 0.99" range="0 0.9" armature="0.005" damping="0.1"/>
+        </default>
+        <default class="ur10e_gripper_follower">
+          <joint solreflimit="0.005" solimplimit="0.95 0.99" range="-0.872664 0.9" armature="0.001"/>
+        </default>
+        <default class="ur10e_gripper_spring_link">
+          <joint springref="2.62" stiffness="0.05" range="-0.296706 0.9" armature="0.001" damping="0.00125"/>
+        </default>
+        <default class="ur10e_gripper_coupler">
+          <joint solreflimit="0.005" solimplimit="0.95 0.99" range="-1.57 0" armature="0.001"/>
+        </default>
+        <default class="ur10e_gripper_visual">
+          <geom type="mesh" contype="0" conaffinity="0" group="2" material="black"/>
+        </default>
+        <default class="ur10e_gripper_collision">
+          <geom type="mesh" group="3"/>
+          <default class="ur10e_gripper_pad_box1">
+            <geom size="0.002 0.011 0.009375" type="box" priority="1" friction="0.7" solref="0.004" solimp="0.95 0.99" rgba="0.55 0.55 0.55 1"/>
+          </default>
+          <default class="ur10e_gripper_pad_box2">
+            <geom size="0.002 0.011 0.009375" type="box" priority="1" friction="0.6" solref="0.004" solimp="0.95 0.99" rgba="0.45 0.45 0.45 1"/>
+          </default>
+        </default>
+      </default>
+    </default>
+    <default class="RS1_main">
+      <default class="RS1_cam">
+        <material specular="0" shininess="0.25"/>
+        <default class="RS1_visual">
+          <geom type="mesh" contype="0" conaffinity="0" group="2"/>
+        </default>
+        <default class="RS1_collision">
+          <geom type="mesh" group="3"/>
+        </default>
+      </default>
+    </default>
+    <default class="RS2_main">
+      <default class="RS2_cam">
+        <material specular="0" shininess="0.25"/>
+        <default class="RS2_visual">
+          <geom type="mesh" contype="0" conaffinity="0" group="2"/>
+        </default>
+        <default class="RS2_collision">
+          <geom type="mesh" group="3"/>
+        </default>
+      </default>
+    </default>
+  </default>
+
+  <asset>
+    <texture type="skybox" colorspace="auto" builtin="gradient" width="512" height="3072"/>
+    <material name="odkovek" shininess="0.1" reflectance="0.4" rgba="0.213 0.221 0.225 1"/>
+    <material name="ur10e_black" class="ur10e_robot" rgba="0.033 0.033 0.033 1"/>
+    <material name="ur10e_jointgray" class="ur10e_robot" rgba="0.278 0.278 0.278 1"/>
+    <material name="ur10e_linkgray" class="ur10e_robot" rgba="0.82 0.82 0.82 1"/>
+    <material name="ur10e_urblue" class="ur10e_robot" rgba="0.49 0.678 0.8 1"/>
+    <material name="ur10e_gripper_metal" rgba="0.58 0.58 0.58 1"/>
+    <material name="ur10e_gripper_silicone" rgba="0.1882 0.1882 0.1882 1"/>
+    <material name="ur10e_gripper_black" rgba="0.149 0.149 0.149 1"/>
+    <material name="RS1_Black_Acrylic" class="RS1_cam" rgba="0.07036 0.07036 0.07036 1"/>
+    <material name="RS1_Cameras_Gray" class="RS1_cam" rgba="0.296138 0.296138 0.296138 1"/>
+    <material name="RS1_IR_Emitter_Lens" class="RS1_cam" rgba="0.28744 0.665387 0.327778 1"/>
+    <material name="RS1_IR_Lens" class="RS1_cam" rgba="0.035601 0.035601 0.035601 1"/>
+    <material name="RS1_IR_Rim" class="RS1_cam" rgba="0.799102 0.806952 0.799103 1"/>
+    <material name="RS1_Metal_Casing" class="RS1_cam"/>
+    <material name="RS1_RGB_Pupil" class="RS1_cam" rgba="0.08714 0.002866 0.009346 1"/>
+    <material name="RS2_Black_Acrylic" class="RS2_cam" rgba="0.07036 0.07036 0.07036 1"/>
+    <material name="RS2_Cameras_Gray" class="RS2_cam" rgba="0.296138 0.296138 0.296138 1"/>
+    <material name="RS2_IR_Emitter_Lens" class="RS2_cam" rgba="0.28744 0.665387 0.327778 1"/>
+    <material name="RS2_IR_Lens" class="RS2_cam" rgba="0.035601 0.035601 0.035601 1"/>
+    <material name="RS2_IR_Rim" class="RS2_cam" rgba="0.799102 0.806952 0.799103 1"/>
+    <material name="RS2_Metal_Casing" class="RS2_cam"/>
+    <material name="RS2_RGB_Pupil" class="RS2_cam" rgba="0.08714 0.002866 0.009346 1"/>
+    <mesh name="ur10e_base_0" file="ur10e/base_0.obj"/>
+    <mesh name="ur10e_base_1" file="ur10e/base_1.obj"/>
+    <mesh name="ur10e_shoulder_0" file="ur10e/shoulder_0.obj"/>
+    <mesh name="ur10e_shoulder_1" file="ur10e/shoulder_1.obj"/>
+    <mesh name="ur10e_shoulder_2" file="ur10e/shoulder_2.obj"/>
+    <mesh name="ur10e_upperarm_0" file="ur10e/upperarm_0.obj"/>
+    <mesh name="ur10e_upperarm_1" file="ur10e/upperarm_1.obj"/>
+    <mesh name="ur10e_upperarm_2" file="ur10e/upperarm_2.obj"/>
+    <mesh name="ur10e_upperarm_3" file="ur10e/upperarm_3.obj"/>
+    <mesh name="ur10e_forearm_0" file="ur10e/forearm_0.obj"/>
+    <mesh name="ur10e_forearm_1" file="ur10e/forearm_1.obj"/>
+    <mesh name="ur10e_forearm_2" file="ur10e/forearm_2.obj"/>
+    <mesh name="ur10e_forearm_3" file="ur10e/forearm_3.obj"/>
+    <mesh name="ur10e_wrist1_0" file="ur10e/wrist1_0.obj"/>
+    <mesh name="ur10e_wrist1_1" file="ur10e/wrist1_1.obj"/>
+    <mesh name="ur10e_wrist1_2" file="ur10e/wrist1_2.obj"/>
+    <mesh name="ur10e_wrist2_0" file="ur10e/wrist2_0.obj"/>
+    <mesh name="ur10e_wrist2_1" file="ur10e/wrist2_1.obj"/>
+    <mesh name="ur10e_wrist2_2" file="ur10e/wrist2_2.obj"/>
+    <mesh name="ur10e_wrist3" file="ur10e/wrist3.obj"/>
+    <mesh name="ur10e_gripper_base" file="robotiq_2f85/base.stl"/>
+    <mesh name="ur10e_gripper_base_coupling" file="robotiq_2f85/base_coupling.stl"/>
+    <mesh name="ur10e_gripper_c-a01-85-open" file="robotiq_2f85/c-a01-85-open.stl"/>
+    <mesh name="ur10e_gripper_driver" file="robotiq_2f85/driver.stl"/>
+    <mesh name="ur10e_gripper_coupler" file="robotiq_2f85/coupler.stl"/>
+    <mesh name="ur10e_gripper_spring_link" file="robotiq_2f85/spring_link.stl"/>
+    <mesh name="ur10e_gripper_follower" file="robotiq_2f85/follower.stl"/>
+    <mesh name="ur10e_gripper_tongue" file="robotiq_2f85/tongue.stl"/>
+    <mesh name="RS1_d435i_0" file="realsense_d435i/d435i_0.obj"/>
+    <mesh name="RS1_d435i_1" file="realsense_d435i/d435i_1.obj"/>
+    <mesh name="RS1_d435i_2" file="realsense_d435i/d435i_2.obj"/>
+    <mesh name="RS1_d435i_3" file="realsense_d435i/d435i_3.obj"/>
+    <mesh name="RS1_d435i_4" file="realsense_d435i/d435i_4.obj"/>
+    <mesh name="RS1_d435i_5" file="realsense_d435i/d435i_5.obj"/>
+    <mesh name="RS1_d435i_6" file="realsense_d435i/d435i_6.obj"/>
+    <mesh name="RS1_d435i_7" file="realsense_d435i/d435i_7.obj"/>
+    <mesh name="RS1_d435i_8" file="realsense_d435i/d435i_8.obj"/>
+    <mesh name="RS2_d435i_0" file="realsense_d435i/d435i_0.obj"/>
+    <mesh name="RS2_d435i_1" file="realsense_d435i/d435i_1.obj"/>
+    <mesh name="RS2_d435i_2" file="realsense_d435i/d435i_2.obj"/>
+    <mesh name="RS2_d435i_3" file="realsense_d435i/d435i_3.obj"/>
+    <mesh name="RS2_d435i_4" file="realsense_d435i/d435i_4.obj"/>
+    <mesh name="RS2_d435i_5" file="realsense_d435i/d435i_5.obj"/>
+    <mesh name="RS2_d435i_6" file="realsense_d435i/d435i_6.obj"/>
+    <mesh name="RS2_d435i_7" file="realsense_d435i/d435i_7.obj"/>
+    <mesh name="RS2_d435i_8" file="realsense_d435i/d435i_8.obj"/>
+  </asset>
+
+  <worldbody>
+    <geom name="floor" size="3 3 0.1" type="plane" rgba="0.9 0.9 0.9 1"/>
+    <site name="w_x" pos="0.5 0 0" quat="0.707107 0 0.707107 0" size="0.005 0.5" type="cylinder" rgba="1 0 0 1"/>
+    <site name="w_y" pos="0 0.5 0" quat="0.707107 0.707107 0 0" size="0.005 0.5" type="cylinder" rgba="0 1 0 1"/>
+    <site name="w_z" pos="0 0 0.5" size="0.005 0.5" type="cylinder" rgba="0 0 1 1"/>
+    <light pos="0 0 2" dir="0 0 -1" castshadow="false" diffuse="0.4 0.4 0.4" specular="0.1 0.1 0.1"/>
+    <light pos="0 0 4" dir="0 0 -1" type="directional" diffuse="0.8 0.8 0.8" specular="0.2 0.2 0.2"/>
+    <body name="Target" mocap="true">
+      <site pos="0.05 0 0" quat="0.707107 0 0.707107 0" size="0.002 0.05" group="5" type="cylinder" rgba="1 0 0 1"/>
+      <site pos="0 0.05 0" quat="0.707107 0.707107 0 0" size="0.002 0.05" group="5" type="cylinder" rgba="0 1 0 1"/>
+      <site pos="0 0 0.05" size="0.002 0.05" group="5" type="cylinder" rgba="0 0 1 1"/>
+      <site name="Target" pos="0 0 0" size="0.01" group="5" rgba="1 0.5 1 0.5"/>
+    </body>
+    <body name="main_table">
+      <geom name="main_table_top" size="0.3 0.6 0.02" pos="0 0 0.73" type="box" rgba="0.5 0.5 0.6 1"/>
+      <geom name="main_table_obstacle" size="0.02 0.15 0.35" pos="0 0.45 1.1" type="box" rgba="0.5 0.5 0.6 1"/>
+      <geom name="main_table_leg_fl" size="0.03 0.03 0.35" pos="0.27 0.57 0.35" type="box" rgba="0.2 0.2 0.25 1"/>
+      <geom name="main_table_leg_fr" size="0.03 0.03 0.35" pos="0.27 -0.57 0.35" type="box" rgba="0.2 0.2 0.25 1"/>
+      <geom name="main_table_leg_rl" size="0.03 0.03 0.35" pos="-0.27 0.57 0.35" type="box" rgba="0.2 0.2 0.25 1"/>
+      <geom name="main_table_leg_rr" size="0.03 0.03 0.35" pos="-0.27 -0.57 0.35" type="box" rgba="0.2 0.2 0.25 1"/>
+      <site name="ur10e_base_mount" pos="0 -0.4 0.75" size="0.01" rgba="0 0 1 1"/>
+      <body name="ur10e" childclass="ur10e_robot" pos="0 -0.4 0.75">
+        <site name="ur10e_x" pos="0.25 0 0" quat="0.707107 0 0.707107 0" size="0.01 0.25" group="1" type="cylinder" rgba="1 0 0 1"/>
+        <site name="ur10e_y" pos="0 0.25 0" quat="0.707107 0.707107 0 0" size="0.01 0.25" group="1" type="cylinder" rgba="0 1 0 1"/>
+        <site name="ur10e_z" pos="0 0 0.25" size="0.01 0.25" group="1" type="cylinder" rgba="0 0 1 1"/>
+        <body name="ur10e_base_link" quat="0 0 0 1">
+          <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="3.761" diaginertia="0.01125 0.00610633 0.00610633"/>
+          <geom class="ur10e_visual" material="ur10e_black" mesh="ur10e_base_0"/>
+          <geom class="ur10e_visual" material="ur10e_jointgray" mesh="ur10e_base_1"/>
+          <geom class="ur10e_collision" size="0.078 0.125" pos="0 0 0.15"/>
+          <body name="ur10e_shoulder_link" pos="0 0 0.1807">
+            <inertial pos="0.021 0 0.027" mass="7.369" diaginertia="0.0314743 0.0314743 0.0218756"/>
+            <joint name="ur10e_shoulder_pan_joint" class="ur10e_size4" pos="0 0 0" axis="0 0 1"/>
+            <geom class="ur10e_visual" material="ur10e_urblue" mesh="ur10e_shoulder_0"/>
+            <geom class="ur10e_visual" material="ur10e_black" mesh="ur10e_shoulder_1"/>
+            <geom class="ur10e_visual" material="ur10e_jointgray" mesh="ur10e_shoulder_2"/>
+            <body name="ur10e_upper_arm_link" pos="0 0.17615 0" quat="0.707107 0 0.707107 0">
+              <inertial pos="0 -0.0227 0.2327" mass="13.051" diaginertia="0.423074 0.423074 0.0363656"/>
+              <joint name="ur10e_shoulder_lift_joint" class="ur10e_size4" pos="0 0 0" axis="0 1 0"/>
+              <geom class="ur10e_visual" material="ur10e_black" mesh="ur10e_upperarm_0"/>
+              <geom class="ur10e_visual" material="ur10e_jointgray" mesh="ur10e_upperarm_1"/>
+              <geom class="ur10e_visual" material="ur10e_urblue" mesh="ur10e_upperarm_2"/>
+              <geom class="ur10e_visual" material="ur10e_linkgray" mesh="ur10e_upperarm_3"/>
+              <geom class="ur10e_collision" size="0.078 0.125" pos="0 -0.02 0" quat="0.707107 0.707107 0 0"/>
+              <geom class="ur10e_collision" size="0.08 0.055" pos="0 0 0.055"/>
+              <geom class="ur10e_collision" size="0.06 0.24" pos="0 0 0.33"/>
+              <body name="ur10e_forearm_link" pos="0 -0.137 0.6127">
+                <inertial pos="0 0.0289 0.3316" mass="3.989" diaginertia="0.11059 0.11059 0.0108844"/>
+                <joint name="ur10e_elbow_joint" class="ur10e_size3_limited" pos="0 0 0" axis="0 1 0"/>
+                <geom class="ur10e_visual" material="ur10e_urblue" mesh="ur10e_forearm_0"/>
+                <geom class="ur10e_visual" material="ur10e_black" mesh="ur10e_forearm_1"/>
+                <geom class="ur10e_visual" material="ur10e_jointgray" mesh="ur10e_forearm_2"/>
+                <geom class="ur10e_visual" material="ur10e_linkgray" mesh="ur10e_forearm_3"/>
+                <geom class="ur10e_collision" size="0.06 0.11" pos="0 0.1 0" quat="0.707107 0.707107 0 0"/>
+                <geom class="ur10e_collision" size="0.046 0.26" pos="0 0 0.3"/>
+                <geom class="ur10e_collision" size="0.06 0.06" pos="0 0 0.025"/>
+                <body name="ur10e_wrist_1_link" pos="0 0 0.57155" quat="0.707107 0 0.707107 0">
+                  <inertial pos="0 0.142 0.018" quat="0.5 0.5 -0.5 0.5" mass="2.1" diaginertia="0.0055125 0.00510825 0.00510825"/>
+                  <joint name="ur10e_wrist_1_joint" class="ur10e_size2" pos="0 0 0" axis="0 1 0"/>
+                  <geom class="ur10e_visual" material="ur10e_black" mesh="ur10e_wrist1_0"/>
+                  <geom class="ur10e_visual" material="ur10e_urblue" mesh="ur10e_wrist1_1"/>
+                  <geom class="ur10e_visual" material="ur10e_jointgray" mesh="ur10e_wrist1_2"/>
+                  <geom class="ur10e_collision" size="0.05 0.08" pos="0 0.02 0" quat="0.707107 0.707107 0 0"/>
+                  <body name="ur10e_wrist_2_link" pos="0 0.135 0">
+                    <inertial pos="0 0.018 0.1129" quat="0.5 0.5 -0.5 0.5" mass="1.98" diaginertia="0.0055125 0.00510825 0.00510825"/>
+                    <joint name="ur10e_wrist_2_joint" class="ur10e_size2" pos="0 0 0" axis="0 0 1"/>
+                    <geom class="ur10e_visual" material="ur10e_black" mesh="ur10e_wrist2_0"/>
+                    <geom class="ur10e_visual" material="ur10e_urblue" mesh="ur10e_wrist2_1"/>
+                    <geom class="ur10e_visual" material="ur10e_jointgray" mesh="ur10e_wrist2_2"/>
+                    <geom class="ur10e_collision" size="0.048 0.085" pos="0 0 0.02"/>
+                    <geom class="ur10e_collision" size="0.048 0.07" pos="0 0.008 0.12" quat="0.707107 0.707107 0 0"/>
+                    <body name="ur10e_wrist_3_link" pos="0 0 0.11985">
+                      <inertial pos="0 0.0905 0" quat="6.34592e-10 0.707107 -0.707107 6.34592e-10" mass="0.615" diaginertia="0.000204525 0.000144346 0.000144346"/>
+                      <joint name="ur10e_wrist_3_joint" class="ur10e_size2" pos="0 0 0" axis="0 1 0"/>
+                      <geom class="ur10e_visual" material="ur10e_linkgray" mesh="ur10e_wrist3"/>
+                      <geom class="ur10e_collision" size="0.048 0.02" pos="0 0.097 0" quat="0.707107 0.707107 0 0"/>
+                      <body name="ur10e_flange" pos="0 0.11655 0" quat="0.707107 -0.707107 0 0">
+                        <site pos="0.125 0 0" quat="0.707107 0 0.707107 0" size="0.005 0.125" group="3" type="cylinder" rgba="1 0 0 1"/>
+                        <site pos="0 0.125 0" quat="0.707107 0.707107 0 0" size="0.005 0.125" group="3" type="cylinder" rgba="0 1 0 1"/>
+                        <site pos="0 0 0.125" size="0.005 0.125" group="3" type="cylinder" rgba="0 0 1 1"/>
+                        <site name="ur10e_flange" pos="0 0 0"/>
+                        <body name="ur10e_gripper_hand" childclass="ur10e_gripper_2f85">
+                          <inertial pos="0 -2.70394e-05 0.0354675" quat="0.999999 -0.00152849 0 0" mass="0.777441" diaginertia="0.000260285 0.000225381 0.000152708"/>
+                          <geom class="ur10e_gripper_visual" pos="0 0 0.0108" quat="0 0 0 1" material="ur10e_gripper_black" mesh="ur10e_gripper_base"/>
+                          <geom class="ur10e_gripper_visual" pos="0 0 0.004" quat="0.707107 -0.707107 0 0" material="ur10e_gripper_black" mesh="ur10e_gripper_base_coupling"/>
+                          <geom class="ur10e_gripper_visual" pos="0 0 0.0108" quat="1 0 0 0" material="ur10e_gripper_metal" mesh="ur10e_gripper_c-a01-85-open"/>
+                          <geom class="ur10e_gripper_collision" mesh="ur10e_gripper_base"/>
+                          <site pos="0.0625 0 0.16" quat="0.707107 0 0.707107 0" size="0.005 0.0625" group="4" type="cylinder" rgba="1 0 0 1"/>
+                          <site pos="0 0.0625 0.16" quat="0.707107 0.707107 0 0" size="0.005 0.0625" group="4" type="cylinder" rgba="0 1 0 1"/>
+                          <site pos="0 0 0.2225" size="0.005 0.0625" group="4" type="cylinder" rgba="0 0 1 1"/>
+                          <site name="ur10e_TCP" pos="0 0 0.16" size="0.008" group="4"/>
+                          <camera name="ur10e_gripper_cam" pos="0 0 0.16" quat="0 1 0 0"/>
+                          <body name="ur10e_gripper_left_driver" pos="-0.0306011 0.00475 0.0657045" quat="0.707107 -0.707107 0 0">
+                            <inertial pos="0 0.0177547 0.00107314" quat="0.681301 0.732003 0 0" mass="0.00899563" diaginertia="1.72352e-06 1.60906e-06 3.22006e-07"/>
+                            <joint name="ur10e_gripper_left_driver_joint" class="ur10e_gripper_driver" pos="0 0 0" axis="0 0 1"/>
+                            <geom class="ur10e_gripper_visual" pos="0.0306011 0.0549045 -0.0047" quat="0.707107 0.707107 0 0" material="ur10e_gripper_metal" mesh="ur10e_gripper_driver"/>
+                            <geom class="ur10e_gripper_collision" pos="0.0306011 0.0549045 -0.0047" quat="0.707107 0.707107 0 0" mesh="ur10e_gripper_driver"/>
+                            <body name="ur10e_gripper_left_coupler" pos="-0.0314249 0.00453223 -0.0102" quat="0 0 0 1">
+                              <inertial pos="0 0.00301209 0.0232175" quat="0.705636 -0.0455904 0.0455904 0.705636" mass="0.0140974" diaginertia="4.16206e-06 3.52216e-06 8.88131e-07"/>
+                              <geom class="ur10e_gripper_visual" pos="-0.062026 -0.0503723 0.0055" quat="0.707107 -0.707107 0 0" material="ur10e_gripper_black" mesh="ur10e_gripper_coupler"/>
+                              <geom class="ur10e_gripper_collision" pos="-0.062026 -0.0503723 0.0055" quat="0.707107 -0.707107 0 0" mesh="ur10e_gripper_coupler"/>
+                            </body>
+                          </body>
+                          <body name="ur10e_gripper_left_spring_link" pos="-0.0127 -0.012 0.07222" quat="0.707107 -0.707107 0 0">
+                            <inertial pos="-8.65005e-09 0.0181624 0.0212658" quat="0.663403 -0.244737 0.244737 0.663403" mass="0.0221642" diaginertia="8.96853e-06 6.71733e-06 2.63931e-06"/>
+                            <joint name="ur10e_gripper_left_spring_link_joint" class="ur10e_gripper_spring_link" pos="0 0 0" axis="0 0 1" springref="2.62"/>
+                            <geom class="ur10e_gripper_visual" pos="0.0127 0.06142 0.01205" quat="0.707107 0.707107 0 0" material="ur10e_gripper_black" mesh="ur10e_gripper_spring_link"/>
+                            <geom class="ur10e_gripper_collision" pos="0.0127 0.06142 0.01205" quat="0.707107 0.707107 0 0" mesh="ur10e_gripper_spring_link"/>
+                            <body name="ur10e_gripper_left_follower" pos="-0.0382079 -0.0425003 0.00295" quat="0 -1 -1.90231e-05 0">
+                              <inertial pos="0 -0.011046 0.0124786" quat="0.986437 0.164143 0 0" mass="0.0125222" diaginertia="2.67415e-06 2.4559e-06 6.02031e-07"/>
+                              <joint name="ur10e_gripper_left_follower" class="ur10e_gripper_follower" pos="0 0 0" axis="0 0 1"/>
+                              <geom class="ur10e_gripper_visual" pos="0.0509079 -0.10392 -0.0091" quat="0.707107 -0.707107 0 0" material="ur10e_gripper_black" mesh="ur10e_gripper_follower"/>
+                              <geom class="ur10e_gripper_visual" pos="0.0509079 -0.10392 -0.0091" quat="0.707107 -0.707107 0 0" material="ur10e_gripper_metal" mesh="ur10e_gripper_tongue"/>
+                              <geom class="ur10e_gripper_collision" pos="0.0509079 -0.10392 -0.0091" quat="0.707107 -0.707107 0 0" mesh="ur10e_gripper_follower"/>
+                              <geom class="ur10e_gripper_collision" pos="0.0509079 -0.10392 -0.0091" quat="0.707107 -0.707107 0 0" mesh="ur10e_gripper_tongue"/>
+                              <body name="ur10e_gripper_left_pad" pos="-0.0377897 -0.103916 -0.0091" quat="0.707107 -0.707107 0 0">
+                                <geom name="ur10e_gripper_left_pad1" class="ur10e_gripper_pad_box1" pos="0.043258 0 0.12" mass="1e-06"/>
+                                <geom name="ur10e_gripper_left_pad2" class="ur10e_gripper_pad_box2" pos="0.043258 0 0.13875" mass="1e-06"/>
+                              </body>
+                            </body>
+                          </body>
+                          <body name="ur10e_gripper_right_driver" pos="0.0306011 -0.00475 0.0657045" quat="0 0 -0.707107 0.707107">
+                            <inertial pos="2.96931e-12 0.0177547 0.00107314" quat="0.681301 0.732003 0 0" mass="0.00899563" diaginertia="1.72352e-06 1.60906e-06 3.22006e-07"/>
+                            <joint name="ur10e_gripper_right_driver_joint" class="ur10e_gripper_driver" pos="0 0 0" axis="0 0 1"/>
+                            <geom class="ur10e_gripper_visual" pos="0.0306011 0.0549045 -0.0047" quat="0.707107 0.707107 0 0" material="ur10e_gripper_metal" mesh="ur10e_gripper_driver"/>
+                            <geom class="ur10e_gripper_collision" pos="0.0306011 0.0549045 -0.0047" quat="0.707107 0.707107 0 0" mesh="ur10e_gripper_driver"/>
+                            <body name="ur10e_gripper_right_coupler" pos="-0.0314249 0.00453223 -0.0102" quat="0 0 0 1">
+                              <inertial pos="0 0.00301209 0.0232175" quat="0.705636 -0.0455904 0.0455904 0.705636" mass="0.0140974" diaginertia="4.16206e-06 3.52216e-06 8.88131e-07"/>
+                              <geom class="ur10e_gripper_visual" pos="-0.062026 -0.0503723 0.0055" quat="0.707107 -0.707107 0 0" material="ur10e_gripper_black" mesh="ur10e_gripper_coupler"/>
+                              <geom class="ur10e_gripper_collision" pos="-0.062026 -0.0503723 0.0055" quat="0.707107 -0.707107 0 0" mesh="ur10e_gripper_coupler"/>
+                            </body>
+                          </body>
+                          <body name="ur10e_gripper_right_spring_link" pos="0.0127 0.012 0.07222" quat="0 0 -0.707107 0.707107">
+                            <inertial pos="-8.65005e-09 0.0181624 0.0212658" quat="0.663403 -0.244737 0.244737 0.663403" mass="0.0221642" diaginertia="8.96853e-06 6.71733e-06 2.63931e-06"/>
+                            <joint name="ur10e_gripper_right_spring_link_joint" class="ur10e_gripper_spring_link" pos="0 0 0" axis="0 0 1" springref="2.62"/>
+                            <geom class="ur10e_gripper_visual" pos="0.0127 0.06142 0.01205" quat="0.707107 0.707107 0 0" material="ur10e_gripper_black" mesh="ur10e_gripper_spring_link"/>
+                            <geom class="ur10e_gripper_collision" pos="0.0127 0.06142 0.01205" quat="0.707107 0.707107 0 0" mesh="ur10e_gripper_spring_link"/>
+                            <body name="ur10e_gripper_right_follower" pos="-0.0382079 -0.0425003 0.00295" quat="0 -1 0 0">
+                              <inertial pos="0 -0.011046 0.0124786" quat="0.986437 0.164143 0 0" mass="0.0125222" diaginertia="2.67415e-06 2.4559e-06 6.02031e-07"/>
+                              <joint name="ur10e_gripper_right_follower_joint" class="ur10e_gripper_follower" pos="0 0 0" axis="0 0 1"/>
+                              <geom class="ur10e_gripper_visual" pos="0.0509079 -0.10392 -0.0091" quat="0.707107 -0.707107 0 0" material="ur10e_gripper_metal" mesh="ur10e_gripper_tongue"/>
+                              <geom class="ur10e_gripper_visual" pos="0.0509079 -0.10392 -0.0091" quat="0.707107 -0.707107 0 0" material="ur10e_gripper_black" mesh="ur10e_gripper_follower"/>
+                              <geom class="ur10e_gripper_collision" pos="0.0509079 -0.10392 -0.0091" quat="0.707107 -0.707107 0 0" mesh="ur10e_gripper_tongue"/>
+                              <geom class="ur10e_gripper_collision" pos="0.0509079 -0.10392 -0.0091" quat="0.707107 -0.707107 0 0" mesh="ur10e_gripper_follower"/>
+                              <body name="ur10e_gripper_right_pad" pos="-0.0377897 -0.103916 -0.0091" quat="0.707107 -0.707107 0 0">
+                                <geom name="ur10e_gripper_right_pad1" class="ur10e_gripper_pad_box1" pos="0.043258 0 0.12" mass="1e-06"/>
+                                <geom name="ur10e_gripper_right_pad2" class="ur10e_gripper_pad_box2" pos="0.043258 0 0.13875" mass="1e-06"/>
+                              </body>
+                            </body>
+                          </body>
+                          <body name="Grasped_Odkovek" pos="0 0 0.17" quat="0 -0.707107 0.707107 0">
+                            <site name="Grasped_Odkovek_grasp" pos="0 0 0" size="0.01" group="2" rgba="1 1 0 1"/>
+                            <site name="Grasped_x" pos="0.025 0 0" quat="0.707107 0 0.707107 0" size="0.0031 0.025" group="2" type="cylinder" rgba="1 0 0 1"/>
+                            <site name="Grasped_y" pos="0 0.025 0" quat="0.707107 0.707107 0 0" size="0.0031 0.025" group="2" type="cylinder" rgba="0 1 0 1"/>
+                            <site name="Grasped_z" pos="0 0 0.025" size="0.0031 0.025" group="2" type="cylinder" rgba="0 0 1 1"/>
+                            <body quat="1.32679e-06 1 0 0">
+                              <geom size="0.12 0.012 0.012" type="box" contype="0" conaffinity="0"/>
+                              <geom size="0.13 0.015 0.015" type="box" group="3" rgba="1 0 0 0.4"/>
+                            </body>
+                          </body>
+                        </body>
+                      </body>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+    <body name="cell_enclosure">
+      <geom name="post_fl" size="0.04 0.04 1" pos="0.75 1 1" type="box" rgba="0.1 0.2 0.6 1"/>
+      <geom name="post_fr" size="0.04 0.04 1" pos="0.75 -1 1" type="box" rgba="0.1 0.2 0.6 1"/>
+      <geom name="post_rl" size="0.04 0.04 1" pos="-0.75 1 1" type="box" rgba="0.1 0.2 0.6 1"/>
+      <geom name="post_rr" size="0.04 0.04 1" pos="-0.75 -1 1" type="box" rgba="0.1 0.2 0.6 1"/>
+      <geom name="beam_front" size="0.75 0.03 0.03" pos="0 1 2" type="box" rgba="0.15 0.25 0.7 1"/>
+      <geom name="beam_rear" size="0.75 0.03 0.03" pos="0 -1 2" type="box" rgba="0.15 0.25 0.7 1"/>
+      <geom name="beam_left" size="0.03 1 0.03" pos="-0.75 0 2" type="box" rgba="0.15 0.25 0.7 1"/>
+      <geom name="beam_right" size="0.03 1 0.03" pos="0.75 0 2" type="box" rgba="0.15 0.25 0.7 1"/>
+      <geom name="beam_over_robot" size="0.75 0.03 0.03" pos="0 0 2" type="box" rgba="0.1 0.3 0.8 1"/>
+      <geom name="panel_front" size="0.7 0.01 0.9" pos="0 0.99 1" type="box" group="4" rgba="0.6 0.7 1 0.2"/>
+      <geom name="panel_rear" size="0.7 0.01 0.9" pos="0 -0.99 1" type="box" group="4" rgba="0.6 0.7 1 0.2"/>
+      <geom name="panel_left" size="0.01 0.9 0.9" pos="-0.74 0 1" type="box" group="4" rgba="0.6 0.7 1 0.2"/>
+      <geom name="panel_right" size="0.01 0.9 0.9" pos="0.74 0 1" type="box" group="4" rgba="0.6 0.7 1 0.4"/>
+      <geom name="panel_top" size="0.7 0.9 0.01" pos="0 0 2" type="box" group="4" rgba="0.6 0.7 1 0.4"/>
+    </body>
+    <body name="small_table" pos="0.45 0.6 0">
+      <geom name="small_table_column" size="0.05 0.05 0.445" pos="0 0 0.445" type="box" rgba="0.3 0.3 0.3 1"/>
+      <geom name="small_table_lower" size="0.2 0.2 0.015" pos="0 0 0.585" type="box"/>
+      <geom name="small_table_upper" size="0.2 0.2 0.015" pos="0 0 0.885" type="box" rgba="0.6 0.6 0.6 1"/>
+      <site name="pick_surface" pos="0 0 0.6" size="0.1 0.02 0.001" type="box" rgba="0 1 0 1"/>
+      <site name="place_surface" pos="0 0 0.9" size="0.1 0.02 0.001" type="box" rgba="1 0 0 1"/>
+    </body>
+    <body name="O-0" pos="0.45 0.55 0.92">
+      <site name="O_x-0" pos="0.025 0 0" quat="0.707107 0 0.707107 0" size="0.0031 0.025" group="2" type="cylinder" rgba="1 0 0 1"/>
+      <site name="O_y-0" pos="0 0.025 0" quat="0.707107 0.707107 0 0" size="0.0031 0.025" group="2" type="cylinder" rgba="0 1 0 1"/>
+      <site name="O_z-0" pos="0 0 0.025" size="0.0031 0.025" group="2" type="cylinder" rgba="0 0 1 1"/>
+      <body quat="1.32679e-06 1 0 0">
+        <geom size="0.12 0.012 0.012" type="box" contype="0" conaffinity="0"/>
+        <geom name="OC-0" size="0.13 0.015 0.015" type="box" group="3" rgba="1 0 0 0.4"/>
+      </body>
+    </body>
+    <body name="O-1" pos="0.45 0.6 0.92">
+      <site name="O_x-1" pos="0.025 0 0" quat="0.707107 0 0.707107 0" size="0.0031 0.025" group="2" type="cylinder" rgba="1 0 0 1"/>
+      <site name="O_y-1" pos="0 0.025 0" quat="0.707107 0.707107 0 0" size="0.0031 0.025" group="2" type="cylinder" rgba="0 1 0 1"/>
+      <site name="O_z-1" pos="0 0 0.025" size="0.0031 0.025" group="2" type="cylinder" rgba="0 0 1 1"/>
+      <body quat="1.32679e-06 1 0 0">
+        <geom size="0.12 0.012 0.012" type="box" contype="0" conaffinity="0"/>
+        <geom name="OC-1" size="0.13 0.015 0.015" type="box" group="3" rgba="1 0 0 0.4"/>
+      </body>
+    </body>
+    <body name="O-2" pos="0.45 0.65 0.92">
+      <site name="O_x-2" pos="0.025 0 0" quat="0.707107 0 0.707107 0" size="0.0031 0.025" group="2" type="cylinder" rgba="1 0 0 1"/>
+      <site name="O_y-2" pos="0 0.025 0" quat="0.707107 0.707107 0 0" size="0.0031 0.025" group="2" type="cylinder" rgba="0 1 0 1"/>
+      <site name="O_z-2" pos="0 0 0.025" size="0.0031 0.025" group="2" type="cylinder" rgba="0 0 1 1"/>
+      <body quat="1.32679e-06 1 0 0">
+        <geom size="0.12 0.012 0.012" type="box" contype="0" conaffinity="0"/>
+        <geom name="OC-2" size="0.13 0.015 0.015" type="box" group="3" rgba="1 0 0 0.4"/>
+      </body>
+    </body>
+    <body name="O-3" pos="0.45 0.7 0.92">
+      <site name="O_x-3" pos="0.025 0 0" quat="0.707107 0 0.707107 0" size="0.0031 0.025" group="2" type="cylinder" rgba="1 0 0 1"/>
+      <site name="O_y-3" pos="0 0.025 0" quat="0.707107 0.707107 0 0" size="0.0031 0.025" group="2" type="cylinder" rgba="0 1 0 1"/>
+      <site name="O_z-3" pos="0 0 0.025" size="0.0031 0.025" group="2" type="cylinder" rgba="0 0 1 1"/>
+      <body quat="1.32679e-06 1 0 0">
+        <geom size="0.12 0.012 0.012" type="box" contype="0" conaffinity="0"/>
+        <geom name="OC-3" size="0.13 0.015 0.015" type="box" group="3" rgba="1 0 0 0.4"/>
+      </body>
+    </body>
+    <body name="camera1_stand" pos="-0.65 0.6 0">
+      <geom name="camera1_stand_base" size="0.08 0.02" pos="0 0 0.02" type="cylinder" rgba="0.3 0.3 0.3 1"/>
+      <geom name="camera1_stand_pole" size="0.01 0.6" pos="0 0 0.6" type="cylinder" rgba="0.4 0.4 0.4 1"/>
+      <site name="camera1_mount" pos="0 0 1.2" size="0.003" rgba="0 0 1 1"/>
+      <body name="RS1_cam" childclass="RS1_cam" pos="0.013 0 1.215" quat="0.5 0.5 0.5 0.5">
+        <geom name="RS1_d435i_0" class="RS1_visual" mass="0" material="RS1_IR_Lens" mesh="RS1_d435i_0"/>
+        <geom name="RS1_d435i_1" class="RS1_visual" mass="0" material="RS1_IR_Emitter_Lens" mesh="RS1_d435i_1"/>
+        <geom name="RS1_d435i_2" class="RS1_visual" mass="0" material="RS1_IR_Rim" mesh="RS1_d435i_2"/>
+        <geom name="RS1_d435i_3" class="RS1_visual" mass="0" material="RS1_IR_Lens" mesh="RS1_d435i_3"/>
+        <geom name="RS1_d435i_4" class="RS1_visual" mass="0" material="RS1_Cameras_Gray" mesh="RS1_d435i_4"/>
+        <geom name="RS1_d435i_5" class="RS1_visual" mass="0" material="RS1_Black_Acrylic" mesh="RS1_d435i_5"/>
+        <geom name="RS1_d435i_6" class="RS1_visual" mass="0" material="RS1_Black_Acrylic" mesh="RS1_d435i_6"/>
+        <geom name="RS1_d435i_7" class="RS1_visual" mass="0" material="RS1_RGB_Pupil" mesh="RS1_d435i_7"/>
+        <geom name="RS1_d435i_8" class="RS1_visual" mass="0.072" material="RS1_Metal_Casing" mesh="RS1_d435i_8"/>
+        <geom class="RS1_collision" size="0.00968864 0.0334784" pos="0.00145113 -0.000319327 -0.0135412" quat="0.0290189 0.708312 0.0275476 0.704764" type="capsule" mass="0"/>
+        <site pos="0.0625 0 0" quat="0.707107 0 0.707107 0" size="0.005 0.0625" group="5" type="cylinder" rgba="1 0 0 1"/>
+        <site pos="0 0.0625 0" quat="0.707107 0.707107 0 0" size="0.005 0.0625" group="5" type="cylinder" rgba="0 1 0 1"/>
+        <site pos="0 0 0.0625" size="0.005 0.0625" group="5" type="cylinder" rgba="0 0 1 1"/>
+        <site name="RS1_frame" pos="0 0 0" quat="0 0 0 1" size="0.001" group="5" rgba="1 0 1 1"/>
+        <camera name="RS1_RGB" pos="0.032 0 -0.002" quat="0 0 1 0" fovy="42.5"/>
+        <camera name="RS1_depth" pos="0 0 0" quat="0 0 1 0" fovy="58"/>
+      </body>
+    </body>
+    <body name="camera2_stand" pos="0 0.9 0" quat="0.707105 0 0 -0.707108">
+      <geom name="camera2_stand_base" size="0.08 0.02" pos="0 0 0.02" type="cylinder" rgba="0.3 0.3 0.3 1"/>
+      <geom name="camera2_stand_pole" size="0.01 0.6" pos="0 0 0.6" type="cylinder" rgba="0.4 0.4 0.4 1"/>
+      <site name="camera2_mount" pos="0 0 1.2" size="0.003" rgba="0 0 1 1"/>
+      <body name="RS2_cam" childclass="RS2_cam" pos="0.013 0 1.215" quat="0.5 0.5 0.5 0.5">
+        <geom name="RS2_d435i_0" class="RS2_visual" mass="0" material="RS2_IR_Lens" mesh="RS2_d435i_0"/>
+        <geom name="RS2_d435i_1" class="RS2_visual" mass="0" material="RS2_IR_Emitter_Lens" mesh="RS2_d435i_1"/>
+        <geom name="RS2_d435i_2" class="RS2_visual" mass="0" material="RS2_IR_Rim" mesh="RS2_d435i_2"/>
+        <geom name="RS2_d435i_3" class="RS2_visual" mass="0" material="RS2_IR_Lens" mesh="RS2_d435i_3"/>
+        <geom name="RS2_d435i_4" class="RS2_visual" mass="0" material="RS2_Cameras_Gray" mesh="RS2_d435i_4"/>
+        <geom name="RS2_d435i_5" class="RS2_visual" mass="0" material="RS2_Black_Acrylic" mesh="RS2_d435i_5"/>
+        <geom name="RS2_d435i_6" class="RS2_visual" mass="0" material="RS2_Black_Acrylic" mesh="RS2_d435i_6"/>
+        <geom name="RS2_d435i_7" class="RS2_visual" mass="0" material="RS2_RGB_Pupil" mesh="RS2_d435i_7"/>
+        <geom name="RS2_d435i_8" class="RS2_visual" mass="0.072" material="RS2_Metal_Casing" mesh="RS2_d435i_8"/>
+        <geom class="RS2_collision" size="0.00968864 0.0334784" pos="0.00145113 -0.000319327 -0.0135412" quat="0.0290189 0.708312 0.0275476 0.704764" type="capsule" mass="0"/>
+        <site pos="0.0625 0 0" quat="0.707107 0 0.707107 0" size="0.005 0.0625" group="5" type="cylinder" rgba="1 0 0 1"/>
+        <site pos="0 0.0625 0" quat="0.707107 0.707107 0 0" size="0.005 0.0625" group="5" type="cylinder" rgba="0 1 0 1"/>
+        <site pos="0 0 0.0625" size="0.005 0.0625" group="5" type="cylinder" rgba="0 0 1 1"/>
+        <site name="RS2_frame" pos="0 0 0" quat="0 0 0 1" size="0.001" group="5" rgba="1 0 1 1"/>
+        <camera name="RS2_RGB" pos="0.032 0 -0.002" quat="0 0 1 0" fovy="42.5"/>
+        <camera name="RS2_depth" pos="0 0 0" quat="0 0 1 0" fovy="58"/>
+      </body>
+    </body>
+  </worldbody>
+
+  <contact>
+    <exclude body1="main_table" body2="ur10e_base_link"/>
+    <exclude body1="ur10e_base_link" body2="ur10e_upper_arm_link"/>
+    <exclude body1="ur10e_gripper_hand" body2="ur10e_gripper_left_driver"/>
+    <exclude body1="ur10e_gripper_hand" body2="ur10e_gripper_left_spring_link"/>
+    <exclude body1="ur10e_gripper_hand" body2="ur10e_gripper_right_driver"/>
+    <exclude body1="ur10e_gripper_hand" body2="ur10e_gripper_right_spring_link"/>
+    <exclude body1="ur10e_gripper_left_driver" body2="ur10e_gripper_left_spring_link"/>
+    <exclude body1="ur10e_gripper_left_coupler" body2="ur10e_gripper_left_spring_link"/>
+    <exclude body1="ur10e_gripper_left_coupler" body2="ur10e_gripper_left_follower"/>
+    <exclude body1="ur10e_gripper_right_driver" body2="ur10e_gripper_right_spring_link"/>
+    <exclude body1="ur10e_gripper_right_coupler" body2="ur10e_gripper_right_spring_link"/>
+    <exclude body1="ur10e_gripper_right_coupler" body2="ur10e_gripper_right_follower"/>
+  </contact>
+
+  <equality>
+    <connect body1="ur10e_gripper_right_follower" body2="ur10e_gripper_right_coupler" anchor="-0.0179014 -0.00651468 0.0044" solref="0.005" solimp="0.95 0.99"/>
+    <connect body1="ur10e_gripper_left_follower" body2="ur10e_gripper_left_coupler" anchor="-0.0179014 -0.00651468 0.0044" solref="0.005" solimp="0.95 0.99"/>
+    <joint joint1="ur10e_gripper_right_driver_joint" joint2="ur10e_gripper_left_driver_joint" polycoef="0 1 0 0 0" solref="0.005" solimp="0.95 0.99"/>
+  </equality>
+
+  <tendon>
+    <fixed name="ur10e_gripper_split">
+      <joint joint="ur10e_gripper_right_driver_joint" coef="0.485"/>
+      <joint joint="ur10e_gripper_left_driver_joint" coef="0.485"/>
+    </fixed>
+  </tendon>
+
+  <actuator>
+    <general name="ur10e_shoulder_pan_actuator" class="ur10e_size4" joint="ur10e_shoulder_pan_joint"/>
+    <general name="ur10e_shoulder_lift_actuator" class="ur10e_size4" joint="ur10e_shoulder_lift_joint"/>
+    <general name="ur10e_elbow_actuator" class="ur10e_size3_limited" joint="ur10e_elbow_joint"/>
+    <general name="ur10e_wrist_1_actuator" class="ur10e_size2" joint="ur10e_wrist_1_joint"/>
+    <general name="ur10e_wrist_2_actuator" class="ur10e_size2" joint="ur10e_wrist_2_joint"/>
+    <general name="ur10e_wrist_3_actuator" class="ur10e_size2" joint="ur10e_wrist_3_joint"/>
+    <general name="robotiq_gripper" class="ur10e_gripper_2f85" tendon="ur10e_gripper_split" ctrlrange="0 1" forcerange="-5 5" gear="-1 0 0 0 0 0" gainprm="80" biasprm="-80 -100 -10"/>
+  </actuator>
+
+  <sensor>
+    <framepos objtype="site" objname="ur10e_TCP" name="ur10e_pos"/>
+    <framequat objtype="site" objname="ur10e_TCP" name="ur10e_ori"/>
+    <framelinvel objtype="site" objname="ur10e_TCP" name="ur10e_v"/>
+    <frameangvel objtype="site" objname="ur10e_TCP" name="ur10e_w"/>
+    <force site="ur10e_TCP" name="ur10e_force" noise="0.5"/>
+    <torque site="ur10e_TCP" name="ur10e_torque" noise="0.5"/>
+  </sensor>
+
+  <keyframe>
+    <key name="ur10e_home" qpos="1.5708 -1.5708 -1.5708 0 1.5708 0 0 0 0 0 0 0" ctrl="1.5708 -1.5708 -1.5708 0 1.5708 0 0"/>
+  </keyframe>
+</mujoco>

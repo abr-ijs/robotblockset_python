@@ -1,0 +1,195 @@
+<!-- ======================================================
+	MuJoCo model
+	
+	Model   : Universal Robots ur10e scene
+	Author  : Leon Zlajpah
+
+	Copyright 2025 IJS 
+
+====================================================== -->
+<mujoco model="ur10e_scene">
+  <compiler angle="radian" meshdir="assets/"/>
+
+  <option timestep="0.001" integrator="implicitfast"/>
+
+  <size nkey="1"/>
+
+  <visual>
+    <map stiffness="700" fogstart="1" fogend="15" zfar="40" haze="1" shadowscale="0.5"/>
+    <rgba haze="0.15 0.25 0.35 1"/>
+  </visual>
+
+  <statistic meansize="0.05"/>
+
+  <default>
+    <light castshadow="false"/>
+    <general biastype="affine" biasprm="0 -1"/>
+    <default class="ur10e_main">
+      <light castshadow="true"/>
+      <general biastype="none" biasprm="0 0"/>
+      <default class="ur10e_robot">
+        <material shininess="0.25"/>
+        <joint range="-6.28319 6.28319" armature="0.1"/>
+        <site size="0.001 0.005 0.005" group="4" rgba="0.5 0.5 0.5 0.3"/>
+        <general ctrlrange="-6.2831 6.2831" biastype="affine" gainprm="5000" biasprm="0 -5000 -500"/>
+        <default class="ur10e_size4">
+          <joint damping="10"/>
+          <general forcerange="-330 330"/>
+        </default>
+        <default class="ur10e_size3">
+          <joint damping="5"/>
+          <general forcerange="-150 150"/>
+          <default class="ur10e_size3_limited">
+            <joint range="-3.1415 3.1415"/>
+            <general ctrlrange="-3.1415 3.1415"/>
+          </default>
+        </default>
+        <default class="ur10e_size2">
+          <joint damping="2"/>
+          <general forcerange="-56 56"/>
+        </default>
+        <default class="ur10e_visual">
+          <geom type="mesh" contype="0" conaffinity="0" group="2"/>
+        </default>
+        <default class="ur10e_collision">
+          <geom type="cylinder" group="3" rgba="0.2 0.2 0 1"/>
+        </default>
+      </default>
+    </default>
+  </default>
+
+  <asset>
+    <texture type="skybox" colorspace="auto" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="3072"/>
+    <texture type="2d" colorspace="auto" name="texplane" builtin="checker" mark="cross" rgb1="0.2 0.3 0.4" rgb2="0.1 0.15 0.2" markrgb="0.8 0.8 0.8" width="512" height="512"/>
+    <material name="matplane" texture="texplane" texuniform="true" texrepeat="10 10" reflectance="0.3"/>
+    <material name="ur10e_black" class="ur10e_robot" rgba="0.033 0.033 0.033 1"/>
+    <material name="ur10e_jointgray" class="ur10e_robot" rgba="0.278 0.278 0.278 1"/>
+    <material name="ur10e_linkgray" class="ur10e_robot" rgba="0.82 0.82 0.82 1"/>
+    <material name="ur10e_urblue" class="ur10e_robot" rgba="0.49 0.678 0.8 1"/>
+    <mesh name="ur10e_base_0" content_type="model/obj" file="ur10e/base_0.obj"/>
+    <mesh name="ur10e_base_1" content_type="model/obj" file="ur10e/base_1.obj"/>
+    <mesh name="ur10e_shoulder_0" content_type="model/obj" file="ur10e/shoulder_0.obj"/>
+    <mesh name="ur10e_shoulder_1" content_type="model/obj" file="ur10e/shoulder_1.obj"/>
+    <mesh name="ur10e_shoulder_2" content_type="model/obj" file="ur10e/shoulder_2.obj"/>
+    <mesh name="ur10e_upperarm_0" content_type="model/obj" file="ur10e/upperarm_0.obj"/>
+    <mesh name="ur10e_upperarm_1" content_type="model/obj" file="ur10e/upperarm_1.obj"/>
+    <mesh name="ur10e_upperarm_2" content_type="model/obj" file="ur10e/upperarm_2.obj"/>
+    <mesh name="ur10e_upperarm_3" content_type="model/obj" file="ur10e/upperarm_3.obj"/>
+    <mesh name="ur10e_forearm_0" content_type="model/obj" file="ur10e/forearm_0.obj"/>
+    <mesh name="ur10e_forearm_1" content_type="model/obj" file="ur10e/forearm_1.obj"/>
+    <mesh name="ur10e_forearm_2" content_type="model/obj" file="ur10e/forearm_2.obj"/>
+    <mesh name="ur10e_forearm_3" content_type="model/obj" file="ur10e/forearm_3.obj"/>
+    <mesh name="ur10e_wrist1_0" content_type="model/obj" file="ur10e/wrist1_0.obj"/>
+    <mesh name="ur10e_wrist1_1" content_type="model/obj" file="ur10e/wrist1_1.obj"/>
+    <mesh name="ur10e_wrist1_2" content_type="model/obj" file="ur10e/wrist1_2.obj"/>
+    <mesh name="ur10e_wrist2_0" content_type="model/obj" file="ur10e/wrist2_0.obj"/>
+    <mesh name="ur10e_wrist2_1" content_type="model/obj" file="ur10e/wrist2_1.obj"/>
+    <mesh name="ur10e_wrist2_2" content_type="model/obj" file="ur10e/wrist2_2.obj"/>
+    <mesh name="ur10e_wrist3" content_type="model/obj" file="ur10e/wrist3.obj"/>
+  </asset>
+
+  <worldbody>
+    <geom name="ground" size="0 0 1" type="plane" condim="1" material="matplane"/>
+    <site pos="0.5 0 0" quat="0.707107 0 0.707107 0" size="0.005 0.5" type="cylinder" rgba="1 0 0 1"/>
+    <site pos="0 0.5 0" quat="0.707107 0.707107 0 0" size="0.005 0.5" type="cylinder" rgba="0 1 0 1"/>
+    <site pos="0 0 0.5" size="0.005 0.5" type="cylinder" rgba="0 0 1 1"/>
+    <light pos="0 0 2" dir="0 0 -1" diffuse="0.4 0.4 0.4" specular="0.1 0.1 0.1"/>
+    <light pos="0 0 4" dir="0 0 -1" type="directional" diffuse="0.8 0.8 0.8" specular="0.2 0.2 0.2"/>
+    <body name="ur10e" childclass="ur10e_robot">
+      <site name="ur10e_x" pos="0.25 0 0" quat="0.707107 0 0.707107 0" size="0.01 0.25" group="1" type="cylinder" rgba="1 0 0 1"/>
+      <site name="ur10e_y" pos="0 0.25 0" quat="0.707107 0.707107 0 0" size="0.01 0.25" group="1" type="cylinder" rgba="0 1 0 1"/>
+      <site name="ur10e_z" pos="0 0 0.25" size="0.01 0.25" group="1" type="cylinder" rgba="0 0 1 1"/>
+      <body name="ur10e_base_link" quat="0 0 0 1">
+        <inertial pos="0 0 0" quat="0.5 0.5 -0.5 0.5" mass="3.761" diaginertia="0.01125 0.00610633 0.00610633"/>
+        <geom class="ur10e_visual" material="ur10e_black" mesh="ur10e_base_0"/>
+        <geom class="ur10e_visual" material="ur10e_jointgray" mesh="ur10e_base_1"/>
+        <geom class="ur10e_collision" size="0.078 0.125" pos="0 0 0.15"/>
+        <body name="ur10e_shoulder_link" pos="0 0 0.1807">
+          <inertial pos="0.021 0 0.027" mass="7.369" diaginertia="0.0314743 0.0314743 0.0218756"/>
+          <joint name="ur10e_shoulder_pan_joint" class="ur10e_size4" pos="0 0 0" axis="0 0 1"/>
+          <geom class="ur10e_visual" material="ur10e_urblue" mesh="ur10e_shoulder_0"/>
+          <geom class="ur10e_visual" material="ur10e_black" mesh="ur10e_shoulder_1"/>
+          <geom class="ur10e_visual" material="ur10e_jointgray" mesh="ur10e_shoulder_2"/>
+          <body name="ur10e_upper_arm_link" pos="0 0.17615 0" quat="0.707107 0 0.707107 0">
+            <inertial pos="0 -0.0227 0.2327" mass="13.051" diaginertia="0.423074 0.423074 0.0363656"/>
+            <joint name="ur10e_shoulder_lift_joint" class="ur10e_size4" pos="0 0 0" axis="0 1 0"/>
+            <geom class="ur10e_visual" material="ur10e_black" mesh="ur10e_upperarm_0"/>
+            <geom class="ur10e_visual" material="ur10e_jointgray" mesh="ur10e_upperarm_1"/>
+            <geom class="ur10e_visual" material="ur10e_urblue" mesh="ur10e_upperarm_2"/>
+            <geom class="ur10e_visual" material="ur10e_linkgray" mesh="ur10e_upperarm_3"/>
+            <geom class="ur10e_collision" size="0.078 0.125" pos="0 -0.02 0" quat="0.707107 0.707107 0 0"/>
+            <geom class="ur10e_collision" size="0.08 0.055" pos="0 0 0.055"/>
+            <geom class="ur10e_collision" size="0.06 0.24" pos="0 0 0.33"/>
+            <body name="ur10e_forearm_link" pos="0 -0.137 0.6127">
+              <inertial pos="0 0.0289 0.3316" mass="3.989" diaginertia="0.11059 0.11059 0.0108844"/>
+              <joint name="ur10e_elbow_joint" class="ur10e_size3_limited" pos="0 0 0" axis="0 1 0"/>
+              <geom class="ur10e_visual" material="ur10e_urblue" mesh="ur10e_forearm_0"/>
+              <geom class="ur10e_visual" material="ur10e_black" mesh="ur10e_forearm_1"/>
+              <geom class="ur10e_visual" material="ur10e_jointgray" mesh="ur10e_forearm_2"/>
+              <geom class="ur10e_visual" material="ur10e_linkgray" mesh="ur10e_forearm_3"/>
+              <geom class="ur10e_collision" size="0.06 0.11" pos="0 0.1 0" quat="0.707107 0.707107 0 0"/>
+              <geom class="ur10e_collision" size="0.046 0.26" pos="0 0 0.3"/>
+              <geom class="ur10e_collision" size="0.06 0.06" pos="0 0 0.025"/>
+              <body name="ur10e_wrist_1_link" pos="0 0 0.57155" quat="0.707107 0 0.707107 0">
+                <inertial pos="0 0.142 0.018" quat="0.5 0.5 -0.5 0.5" mass="2.1" diaginertia="0.0055125 0.00510825 0.00510825"/>
+                <joint name="ur10e_wrist_1_joint" class="ur10e_size2" pos="0 0 0" axis="0 1 0"/>
+                <geom class="ur10e_visual" material="ur10e_black" mesh="ur10e_wrist1_0"/>
+                <geom class="ur10e_visual" material="ur10e_urblue" mesh="ur10e_wrist1_1"/>
+                <geom class="ur10e_visual" material="ur10e_jointgray" mesh="ur10e_wrist1_2"/>
+                <geom class="ur10e_collision" size="0.05 0.08" pos="0 0.02 0" quat="0.707107 0.707107 0 0"/>
+                <body name="ur10e_wrist_2_link" pos="0 0.135 0">
+                  <inertial pos="0 0.018 0.1129" quat="0.5 0.5 -0.5 0.5" mass="1.98" diaginertia="0.0055125 0.00510825 0.00510825"/>
+                  <joint name="ur10e_wrist_2_joint" class="ur10e_size2" pos="0 0 0" axis="0 0 1"/>
+                  <geom class="ur10e_visual" material="ur10e_black" mesh="ur10e_wrist2_0"/>
+                  <geom class="ur10e_visual" material="ur10e_urblue" mesh="ur10e_wrist2_1"/>
+                  <geom class="ur10e_visual" material="ur10e_jointgray" mesh="ur10e_wrist2_2"/>
+                  <geom class="ur10e_collision" size="0.048 0.085" pos="0 0 0.02"/>
+                  <geom class="ur10e_collision" size="0.048 0.07" pos="0 0.008 0.12" quat="0.707107 0.707107 0 0"/>
+                  <body name="ur10e_wrist_3_link" pos="0 0 0.11985">
+                    <inertial pos="0 0.0905 0" quat="6.34592e-10 0.707107 -0.707107 6.34592e-10" mass="0.615" diaginertia="0.000204525 0.000144346 0.000144346"/>
+                    <joint name="ur10e_wrist_3_joint" class="ur10e_size2" pos="0 0 0" axis="0 1 0"/>
+                    <geom class="ur10e_visual" material="ur10e_linkgray" mesh="ur10e_wrist3"/>
+                    <geom class="ur10e_collision" size="0.048 0.02" pos="0 0.097 0" quat="0.707107 0.707107 0 0"/>
+                    <body name="ur10e_flange" pos="0 0.11655 0" quat="0.707107 -0.707107 0 0">
+                      <site pos="0.125 0 0" quat="0.707107 0 0.707107 0" size="0.005 0.125" group="3" type="cylinder" rgba="1 0 0 1"/>
+                      <site pos="0 0.125 0" quat="0.707107 0.707107 0 0" size="0.005 0.125" group="3" type="cylinder" rgba="0 1 0 1"/>
+                      <site pos="0 0 0.125" size="0.005 0.125" group="3" type="cylinder" rgba="0 0 1 1"/>
+                      <site name="ur10e_flange" pos="0 0 0"/>
+                      <site name="ur10e_TCP" pos="0 0 0"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <contact>
+    <exclude body1="ur10e_base_link" body2="ur10e_upper_arm_link"/>
+  </contact>
+
+  <actuator>
+    <general name="ur10e_shoulder_pan_actuator" class="ur10e_size4" joint="ur10e_shoulder_pan_joint"/>
+    <general name="ur10e_shoulder_lift_actuator" class="ur10e_size4" joint="ur10e_shoulder_lift_joint"/>
+    <general name="ur10e_elbow_actuator" class="ur10e_size3_limited" joint="ur10e_elbow_joint"/>
+    <general name="ur10e_wrist_1_actuator" class="ur10e_size2" joint="ur10e_wrist_1_joint"/>
+    <general name="ur10e_wrist_2_actuator" class="ur10e_size2" joint="ur10e_wrist_2_joint"/>
+    <general name="ur10e_wrist_3_actuator" class="ur10e_size2" joint="ur10e_wrist_3_joint"/>
+  </actuator>
+
+  <sensor>
+    <framepos objtype="site" objname="ur10e_TCP" name="ur10e_pos"/>
+    <framequat objtype="site" objname="ur10e_TCP" name="ur10e_ori"/>
+    <framelinvel objtype="site" objname="ur10e_TCP" name="ur10e_v"/>
+    <frameangvel objtype="site" objname="ur10e_TCP" name="ur10e_w"/>
+    <force site="ur10e_TCP" name="ur10e_force" noise="0.5"/>
+    <torque site="ur10e_TCP" name="ur10e_torque" noise="0.5"/>
+  </sensor>
+
+  <keyframe>
+    <key name="ur10e_home" qpos="1.5708 -1.5708 -1.5708 0 1.5708 0" ctrl="1.5708 -1.5708 -1.5708 0 1.5708 0"/>
+  </keyframe>
+</mujoco>

@@ -1,0 +1,167 @@
+<!-- ======================================================
+	MuJoCo model
+	
+	Model   : PAL Robotics TIAGo base
+	Author  : Leon Zlajpah
+
+	Copyright 2025 IJS 
+
+====================================================== -->
+<mujoco model="TiagoBase">
+  <compiler angle="radian" meshdir="assets/" texturedir="assets/"/>
+
+  <option integrator="implicit"/>
+
+  <visual>
+    <headlight diffuse="0.6 0.6 0.6" specular="0 0 0"/>
+    <map fogstart="6"/>
+    <scale framelength="2" framewidth="0.02"/>
+  </visual>
+
+  <default>
+    <light castshadow="false"/>
+    <general biastype="affine" biasprm="0 -1"/>
+    <default class="platform">
+      <joint limited="false" armature="5" damping="5"/>
+      <geom contype="0" condim="4" margin="0.0001" material="BodyWhite"/>
+      <site size="0.01 0.005 0.005" group="3"/>
+      <general ctrllimited="false" ctrlrange="-3000 3000" gainprm="320" biasprm="0 -320 -20"/>
+    </default>
+  </default>
+
+  <asset>
+    <material name="BodyWhite" specular="0.3" shininess="0.6" rgba="0.99 0.99 0.85 1"/>
+    <material name="SiteOrange" rgba="0.3 0.9 0.3 0.3"/>
+    <material name="Blue" rgba="0 0 0.8 1"/>
+    <material name="Green" rgba="0 0.8 0 1"/>
+    <material name="Grey" rgba="0.7 0.7 0.7 1"/>
+    <material name="LightGrey" rgba="0.9 0.9 0.9 1"/>
+    <material name="DarkGrey" rgba="0.2 0.2 0.2 1"/>
+    <material name="Red" rgba="0.8 0 0 1"/>
+    <material name="White"/>
+    <material name="Orange" rgba="1 0.69 0 1"/>
+    <mesh name="base_collision" content_type="model/stl" file="tiagobase/base_collision.stl" scale="0.99 0.99 0.99"/>
+    <mesh name="base" content_type="model/stl" file="tiagobase/base.stl"/>
+    <mesh name="wheel" content_type="model/stl" file="tiagobase/wheel.stl"/>
+    <mesh name="hokuyo_urg_04lx_ug01" content_type="model/stl" file="tiagobase/hokuyo_urg_04lx_ug01.stl"/>
+    <mesh name="cover" content_type="model/stl" file="tiagobase/cover.stl"/>
+    <mesh name="bumper" content_type="model/stl" file="tiagobase/bumper.stl"/>
+    <mesh name="base_ring" content_type="model/stl" file="tiagobase/base_ring.stl"/>
+    <mesh name="antenna" content_type="model/stl" file="tiagobase/antenna.stl"/>
+    <mesh name="bumper_collision" content_type="model/stl" file="tiagobase/bumper_collision.stl"/>
+    <mesh name="srf05" content_type="model/stl" file="tiagobase/srf05.stl"/>
+    <mesh name="caster_1" content_type="model/stl" file="tiagobase/caster_1.stl"/>
+    <mesh name="caster_2" content_type="model/stl" file="tiagobase/caster_2.stl"/>
+    <mesh name="structure_sensor" content_type="model/stl" file="tiagobase/structure_sensor.stl"/>
+  </asset>
+
+  <worldbody>
+    <body name="base" childclass="platform">
+      <inertial pos="0 0 0" mass="1e-10" diaginertia="1e-10 1e-10 1e-10"/>
+      <joint type="free"/>
+      <site name="x" group="2" pos="0.25 0 0" quat="0.707107 0 0.707107 0" size="0.01 0.25" type="cylinder" rgba="1 0 0 1"/>
+      <site name="y" group="2" pos="0 0.25 0" quat="0.707107 0.707107 0 0" size="0.01 0.25" type="cylinder" rgba="0 1 0 1"/>
+      <site name="z" group="2" pos="0 0 0.25" size="0.01 0.25" type="cylinder" rgba="0 0 1 1"/>
+      <body name="base_link" pos="0 0 0.0985">
+        <site name="base" pos="0 0 0" />
+        <body name="mounting_base" pos="0 0 0.2">
+            <site name="mounting_base" pos="0 0 0" />
+        </body>
+        <inertial pos="-1.06e-06 1.09e-06 3.87e-05" quat="0.0376483 0.698692 -0.0458148 0.712961" mass="28.2665" diaginertia="0.550983 0.483441 0.465118"/>
+        <geom type="mesh" material="White" mesh="base_collision"/>
+        <geom type="mesh" material="Grey" mesh="base"/>
+        <body name="laser_link" pos="0.202 0 -0.004">
+          <inertial pos="-0.02559 -0.00056 -0.05732" quat="0.00952961 0.665995 -0.011891 0.7458" mass="0.28922" diaginertia="5.87436e-05 3.37527e-05 2.58643e-05"/>
+          <geom type="mesh" mesh="hokuyo_urg_04lx_ug01"/>
+        </body>
+        <body name="sonar_03_link" pos="-0.183 0.183 0.173" quat="0.382683 0 0 0.92388">
+          <inertial pos="0 0 0" mass="0.001" diaginertia="1e-06 1e-06 1e-06"/>
+          <geom type="mesh" material="DarkGrey" mesh="srf05"/>
+        </body>
+        <body name="sonar_02_link" pos="-0.259 0 0.173" quat="0 0 0 1">
+          <inertial pos="0 0 0" mass="0.001" diaginertia="1e-06 1e-06 1e-06"/>
+          <geom type="mesh" material="DarkGrey" mesh="srf05"/>
+        </body>
+        <body name="sonar_01_link" pos="-0.183 -0.183 0.173" quat="-0.382683 0 0 0.92388">
+          <inertial pos="0 0 0" mass="0.001" diaginertia="1e-06 1e-06 1e-06"/>
+          <geom type="mesh" material="DarkGrey" mesh="srf05"/>
+        </body>
+        <body name="imu_link" pos="0.10171 0 0.11282" quat="0.707107 0 0 -0.707107">
+          <inertial pos="0 0 0" mass="0.01" diaginertia="1e-06 1e-06 1e-06"/>
+        </body>
+        <body name="suspension_right_link">
+          <inertial pos="0 0 -0.02" mass="10" diaginertia="1 1 1"/>
+          <joint name="suspension_right_joint" pos="0 0 0" axis="0 0 1" type="slide" limited="true" range="-0.005 0.005"/>
+          <body name="wheel_right_link" pos="0 -0.2022 0" quat="0.707107 -0.707107 0 0">
+            <inertial pos="0 0 -0.00207" quat="0.296456 0.641958 -0.296458 0.641963" mass="100.824" diaginertia="0.0083924 0.00499747 0.00499738"/>
+            <joint name="joint2" pos="0 0 0" axis="0 0 1"/>
+            <geom name="wheel2" size="0.0985 0.02" type="cylinder" rgba="0.92 0.92 0.2 1"/>
+          </body>
+        </body>
+        <body name="suspension_left_link">
+          <inertial pos="0 0 -0.02" mass="10" diaginertia="1 1 1"/>
+          <joint name="suspension_left_joint" pos="0 0 0" axis="0 0 1" type="slide" limited="true" range="-0.005 0.005"/>
+          <body name="wheel_left_link" pos="0 0.2022 0" quat="0.707107 -0.707107 0 0">
+            <inertial pos="0 0 0.00207" quat="0.641958 0.296456 -0.641963 0.296458" mass="100.824" diaginertia="0.0083924 0.00499747 0.00499738"/>
+            <joint name="joint1" pos="0 0 0" axis="0 0 1"/>
+            <geom name="wheel1" size="0.0985 0.02" type="cylinder" rgba="0.2 0.2 0.2 1"/>
+          </body>
+        </body>
+        <body name="caster_front_right_1_link" pos="0.1695 -0.102 -0.0335">
+          <inertial pos="-0.00634599 5.347e-05 -0.0203752" quat="0.966491 -0.00340536 -0.256544 -0.00828025" mass="0.0514476" diaginertia="1.66556e-05 1.30896e-05 1.04548e-05"/>
+          <joint name="caster_front_right_1_joint" pos="0 0 0" axis="0 0 1"/>
+          <body name="caster_front_right_2_link" pos="-0.016 0 -0.04" quat="0.707107 -0.707107 0 0">
+            <inertial pos="0 0 0" quat="0.707107 0 0 0.707107" mass="0.0885578" diaginertia="1.541e-05 1.075e-05 1.075e-05"/>
+            <joint name="caster_front_right_2_joint" pos="0 0 0" type="ball" damping="0.01"/>
+            <geom size="0.025" rgba="0.2 0.2 0.2 1"/>
+          </body>
+        </body>
+        <body name="caster_front_left_1_link" pos="0.1695 0.102 -0.0335">
+          <inertial pos="-0.00634599 5.347e-05 -0.0203752" quat="0.966491 -0.00340536 -0.256544 -0.00828025" mass="0.0514476" diaginertia="1.66556e-05 1.30896e-05 1.04548e-05"/>
+          <joint name="caster_front_left_1_joint" pos="0 0 0" axis="0 0 1"/>
+          <body name="caster_front_left_2_link" pos="-0.016 0 -0.04" quat="0.707107 -0.707107 0 0">
+            <inertial pos="0 0 0" quat="0.707107 0 0 0.707107" mass="0.0885578" diaginertia="1.541e-05 1.075e-05 1.075e-05"/>
+            <joint name="caster_front_left_2_joint" pos="0 0 0" type="ball" damping="0.01"/>
+            <geom size="0.025" rgba="0.2 0.2 0.2 1"/>
+          </body>
+        </body>
+        <body name="caster_back_right_1_link" pos="-0.1735 -0.102 -0.0335">
+          <inertial pos="-0.00634599 5.347e-05 -0.0203752" quat="0.966491 -0.00340536 -0.256544 -0.00828025" mass="0.0514476" diaginertia="1.66556e-05 1.30896e-05 1.04548e-05"/>
+          <joint name="caster_back_right_1_joint" pos="0 0 0" axis="0 0 1"/>
+          <body name="caster_back_right_2_link" pos="-0.016 0 -0.04" quat="0.707107 -0.707107 0 0">
+            <inertial pos="0 0 0" quat="0.707107 0 0 0.707107" mass="0.0885578" diaginertia="1.541e-05 1.075e-05 1.075e-05"/>
+            <joint name="caster_back_right_2_joint" pos="0 0 0" type="ball" damping="0.01"/>
+            <geom size="0.025" rgba="0.2 0.2 0.2 1"/>
+          </body>
+        </body>
+        <body name="caster_back_left_1_link" pos="-0.1735 0.102 -0.0335">
+          <inertial pos="-0.00634599 5.347e-05 -0.0203752" quat="0.966491 -0.00340536 -0.256544 -0.00828025" mass="0.0514476" diaginertia="1.66556e-05 1.30896e-05 1.04548e-05"/>
+          <joint name="caster_back_left_1_joint" pos="0 0 0" axis="0 0 1"/>
+          <body name="caster_back_left_2_link" pos="-0.016 0 -0.04" quat="0.707107 -0.707107 0 0">
+            <inertial pos="0 0 0" quat="0.707107 0 0 0.707107" mass="0.0885578" diaginertia="1.541e-05 1.075e-05 1.075e-05"/>
+            <joint name="caster_back_left_2_joint" pos="0 0 0" type="ball" damping="0.01"/>
+            <geom size="0.025" rgba="0.2 0.2 0.2 1"/>
+          </body>
+        </body>
+      </body>
+      <body name="cover_link" pos="0 0 0.13">
+        <inertial pos="0.22414 2e-05 0.04681" quat="0.000495314 0.706824 -0.000442171 0.707389" mass="0.25821" diaginertia="0.000384971 0.000283351 0.000237192"/>
+        <geom type="mesh" material="Orange" mesh="base_ring"/>
+      </body>
+    </body>
+  </worldbody>
+
+  <actuator>
+    <velocity class="platform" name="actuator1" joint="joint1" kv="1000"/>
+    <velocity class="platform" name="actuator2" joint="joint2" kv="1000"/>
+  </actuator>
+
+  <sensor>
+    <framepos objtype="site" objname="base" name="pos"/>
+    <framequat objtype="site" objname="base" name="ori"/>
+    <framelinvel objtype="site" objname="base" name="v"/>
+    <frameangvel objtype="site" objname="base" name="w"/>
+    <force site="base" name="force" noise="0.5"/>
+    <torque site="base" name="torque" noise="0.5"/>
+  </sensor>
+</mujoco>

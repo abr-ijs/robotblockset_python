@@ -1,0 +1,163 @@
+<!-- ======================================================
+	MuJoCo model
+	
+	Model   : Inspection cell
+	Author  : Leon Zlajpah
+
+	Copyright 2025 IJS 
+
+====================================================== -->
+<mujoco model="inspection_cell_caged">
+  <compiler angle="radian" meshdir="assets/" texturedir="assets/"/>
+
+  <visual>
+    <global offwidth="1280" offheight="960"/>
+  </visual>
+
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.8 0.8 0.8" rgb2="0.5 0.5 0.5" width="512" height="512"/>
+    <material name="odkovek" shininess="0.1" reflectance="0.4" rgba="0.213 0.221 0.225 1"/>
+  </asset>
+  
+  <worldbody>
+    <light diffuse=".4 .4 .4" specular="0.1 0.1 0.1" pos="0 0 2.0" dir="0 0 -1" castshadow="false"/>
+    <light directional="true" diffuse=".8 .8 .8" specular="0.2 0.2 0.2" pos="0 0 4" dir="0 0 -1"/>
+
+    <!-- Floor -->
+    <geom name="floor" type="plane" size="3 3 0.1"
+        pos="0 0 0" rgba="0.9 0.9 0.9 1"/>
+    <site name="w_x" group="0" type="cylinder" pos="0.5 0 0" quat="0.70711 0 0.70711 0" size="0.005 0.5" rgba="1 0 0 1"/>
+    <site name="w_y" group="0" type="cylinder" pos="0 0.5 0" quat="0.70711 0.70711 0 0" size="0.005 0.5" rgba="0 1 0 1"/>
+    <site name="w_z" group="0" type="cylinder" pos="0 0 0.5" quat="1 0 0 0" size="0.005 0.5" rgba="0 0 1 1"/>
+
+    <body name="Target" mocap="true" pos="0 0 0" axisangle="1 0 0 0">
+      <site group="5" type="cylinder" pos="0.05 0 0  " quat="0.70711 0 0.70711 0" size="0.002 0.05" rgba="1 0 0 1"/>
+      <site group="5" type="cylinder" pos="0 0.05 0  " quat="0.70711 0.70711 0 0" size="0.002 0.05" rgba="0 1 0 1"/>
+      <site group="5" type="cylinder" pos="0 0   0.05" quat="1 0 0 0"             size="0.002 0.05" rgba="0 0 1 1"/>
+      <site group="5" name="Target" type="sphere" pos="0 0 0" size="0.01" rgba="1 .5 1 0.5"/>
+    </body>
+    
+    <!-- =======================
+       MAIN ROBOT TABLE / PLATFORM
+       ======================= -->
+    <!-- Table top: 0.6 m x 1.2 m, height 0.75 m -->
+    <body name="main_table" pos="0 0 0">
+      <geom name="main_table_top" type="box" size="0.3 0.6 0.02" pos="0 0 0.73"      rgba="0.5 0.5 0.6 1"/>
+      <geom name="main_table_obstacle" type="box"size="0.02 0.15 0.35" pos="0 0.45 1.1" rgba="0.5 0.5 0.6 1"/>
+
+      <!-- Optional visual legs -->
+      <geom name="main_table_leg_fl" type="box" size="0.03 0.03 0.35" pos="0.27  0.57 0.35" rgba="0.2 0.2 0.25 1"/>
+      <geom name="main_table_leg_fr" type="box" size="0.03 0.03 0.35" pos="0.27 -0.57 0.35" rgba="0.2 0.2 0.25 1"/>
+      <geom name="main_table_leg_rl" type="box" size="0.03 0.03 0.35" pos="-0.27  0.57 0.35" rgba="0.2 0.2 0.25 1"/>
+      <geom name="main_table_leg_rr" type="box" size="0.03 0.03 0.35" pos="-0.27 -0.57 0.35" rgba="0.2 0.2 0.25 1"/>
+
+      <!-- UR10e base mounting point -->
+      <site name="ur10e_base_mount" pos="0 -0.4 0.75" size="0.01" type="sphere" rgba="0 0 1 1"/>
+    </body>
+
+    <!-- =======================
+       LARGE CAGE / CELL ENCLOSURE
+       ======================= -->
+    <!-- Inner dimensions:
+       - width (x): 1.5 m  -> posts at x = ±0.75
+       - depth (y): 2.0 m  -> posts at y = ±1.00
+       - height: 2.2 m   -> post half-height = 1.1
+    -->
+    <body name="cell_enclosure" pos="0 0 0">
+      <!-- Vertical uprights -->
+      <geom name="post_fl" type="box" size="0.04 0.04 1.0" pos=" 0.75  1.00 1.0" rgba="0.1 0.2 0.6 1"/>
+      <geom name="post_fr" type="box" size="0.04 0.04 1.0" pos=" 0.75 -1.00 1.0" rgba="0.1 0.2 0.6 1"/>
+      <geom name="post_rl" type="box" size="0.04 0.04 1.0" pos="-0.75  1.00 1.0" rgba="0.1 0.2 0.6 1"/>
+      <geom name="post_rr" type="box" size="0.04 0.04 1.0" pos="-0.75 -1.00 1.0" rgba="0.1 0.2 0.6 1"/>
+
+      <!-- Top perimeter beams at z = 2.2 -->
+      <!-- X beams (front & rear) -->
+      <geom name="beam_front" type="box" size="0.75 0.03 0.03" pos="0  1.00 2.0" rgba="0.15 0.25 0.7 1"/>
+      <geom name="beam_rear" type="box" size="0.75 0.03 0.03" pos="0 -1.00 2.0" rgba="0.15 0.25 0.7 1"/>
+
+      <!-- Y beams (left & right) -->
+      <geom name="beam_left" type="box" size="0.03 1.00 0.03" pos="-0.75 0 2.0" rgba="0.15 0.25 0.7 1"/>
+      <geom name="beam_right" type="box" size="0.03 1.00 0.03" pos=" 0.75 0 2.0" rgba="0.15 0.25 0.7 1"/>
+
+      <!-- Overhead cross-beam above robot -->
+      <geom name="beam_over_robot" type="box" size="0.75 0.03 0.03" pos="0 0 2.0" rgba="0.1 0.3 0.8 1"/>
+
+      <!-- Side panels for extra obstacles -->
+      <!-- Use half-height 0.8, centered at z = 1.1 -->
+      <!-- Front panel (door area) -->
+      <geom name="panel_front" type="box" group="4" size="0.70 0.01 0.9" pos="0 0.99 1." rgba="0.6 0.7 1.0 0.2"/>
+      <!-- Rear panel -->
+      <geom name="panel_rear" type="box" group="4" size="0.70 0.01 0.9" pos="0 -0.99 1." rgba="0.6 0.7 1.0 0.2"/>
+      <!-- Left panel -->
+      <geom name="panel_left" type="box" group="4" size="0.01 0.90 0.9" pos="-0.74 0 1." rgba="0.6 0.7 1.0 0.2"/>
+      <!-- Right panel -->
+      <geom name="panel_right" type="box" group="4" size="0.01 0.90 0.9" pos="0.74 0 1." rgba="0.6 0.7 1.0 0.4"/>
+      <!-- Top panel -->
+      <geom name="panel_top" type="box" group="4" size="0.70 0.90 0.01" pos="0 0 2.0" rgba="0.6 0.7 1.0 0.4"/>
+    </body>
+
+    <!-- =======================
+       SMALL TWO-LEVEL TABLE
+       ======================= -->
+    <!-- Inside cage, front-right of robot -->
+    <body name="small_table" pos="0.45 0.60 0">
+      <geom name="small_table_column" type="box" size="0.05 0.05 0.445" pos="0 0 0.445" rgba="0.3 0.3 0.3 1"/>
+
+      <!-- Lower shelf (pick) -->
+      <geom name="small_table_lower" type="box" size="0.2 0.2 0.015" pos="0 0 0.585" rgba="0.5 0.5 0.5 1"/>
+
+      <!-- Upper shelf (place) -->
+      <geom name="small_table_upper" type="box" size="0.2 0.2 0.015" pos="0 0 0.885" rgba="0.6 0.6 0.6 1"/>
+
+      <!-- Pick / place sites -->
+      <site name="pick_surface" type="box" pos="0 0 0.6" size="0.1 0.02 0.001" rgba="0 1 0 1"/>
+      <site name="place_surface" type="box" pos="0 0 0.9" size="0.1 0.02 0.001" rgba="1 0 0 1"/>
+    </body>
+
+    <!-- =======================
+       ITEMS 
+       ======================= -->
+    <!-- O -->
+    <body name="Odkovek" pos="0 0 0" axisangle="1 0 0 0">
+      <body axisangle="1 0 0 3.14159" > 
+      <geom pos="0 0 0" size="0.12 0.012 0.012" type="box" contype="0" conaffinity="0"/> 
+      <geom group="3" pos="0 0. 0." type="box" size="0.13 0.015 0.015" rgba="1 0 0 0.4"/>
+      </body>
+      <site group="2" name="Odkovek_grasp" type="sphere" size="0.01" pos="0 0 0" rgba="1 1 0 1"/>
+      <!--freejoint/-->
+      <site name="x" pos="0.025 0 0" quat="0.707107 0 0.707107 0" size="0.0031 0.025" group="2" type="cylinder" rgba="1 0 0 1"/>
+      <site name="y" pos="0 0.025 0" quat="0.707107 0.707107 0 0" size="0.0031 0.025" group="2" type="cylinder" rgba="0 1 0 1"/>
+      <site name="z" pos="0 0 0.025" size="0.0031 0.025" group="2" type="cylinder" rgba="0 0 1 1"/>
+    </body>
+    <replicate count="4" sep="-" offset="0 0.05 0" euler="0 0 0">
+      <body name="O" pos="0.45 0.55 0.92" axisangle="1 0 0 0">
+        <body axisangle="1 0 0 3.14159" >   
+        <geom pos="0 0 0" size="0.12 0.012 0.012" type="box" contype="0" conaffinity="0"/> 
+        <geom name="OC" group="3" pos="0 0 0" type="box" size="0.13 0.015 0.015" rgba="1 0 0 0.4"/>
+        </body>
+        <!--site group="2" name="Odkovek_grasp" type="sphere" size="0.01" pos="0 0 0" rgba="1 1 0 1"/-->
+        <!--freejoint/-->
+        <site name="O_x" pos="0.025 0 0" quat="0.707107 0 0.707107 0" size="0.0031 0.025" group="2" type="cylinder" rgba="1 0 0 1"/>
+        <site name="O_y" pos="0 0.025 0" quat="0.707107 0.707107 0 0" size="0.0031 0.025" group="2" type="cylinder" rgba="0 1 0 1"/>
+        <site name="O_z" pos="0 0 0.025" size="0.0031 0.025" group="2" type="cylinder" rgba="0 0 1 1"/>
+      </body>
+    </replicate>
+    
+    <!-- =======================
+       CAMERA STANDS
+       ======================= -->
+    <!-- Just outside the front wall (y ≈ 1.2) -->
+    <body name="camera1_stand" pos="-0.65 0.6 0">
+      <geom name="camera1_stand_base" type="cylinder" size="0.08 0.02" pos="0 0 0.02" rgba="0.3 0.3 0.3 1"/>
+      <geom name="camera1_stand_pole" type="cylinder" size="0.01 0.6" pos="0 0 0.6" rgba="0.4 0.4 0.4 1"/>
+      <site name="camera1_mount" type="sphere" pos="0 0 1.2" size="0.003" rgba="0 0 1 1"/>
+    </body>
+
+    <body name="camera2_stand" pos="0.0 0.9 0" axisangle="0 0 1 -1.5708">
+      <geom name="camera2_stand_base" type="cylinder" size="0.08 0.02" pos="0 0 0.02" rgba="0.3 0.3 0.3 1"/>
+      <geom name="camera2_stand_pole" type="cylinder" size="0.01 0.6" pos="0 0 0.6" rgba="0.4 0.4 0.4 1"/>
+      <site name="camera2_mount" type="sphere" pos="0 0 1.2" size="0.003" rgba="0 0 1 1"/>
+    </body>
+
+  </worldbody>
+</mujoco>

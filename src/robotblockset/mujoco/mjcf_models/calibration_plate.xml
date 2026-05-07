@@ -1,0 +1,39 @@
+<!-- ======================================================
+	MuJoCo model
+	
+	Model   : Calibration plate
+	Author  : Leon Zlajpah
+
+	Copyright 2025 IJS 
+
+====================================================== -->
+<mujoco model="calibration_board">
+  <compiler angle="radian" meshdir="assets/" texturedir="assets/"/>
+
+  <asset>
+    <texture name="charuco_tex" type="2d"  file="charuco_320x250_5x7_40_30_DICT_4x4.png"/>
+    <texture name="checker_tex" type="2d"  file="checker_320x250_5x6_40.png"/>
+    <material name="charuco_mat"   texture="charuco_tex"   texrepeat="1 1"   rgba="1 1 1 1"/>
+    <material name="checker_mat"   texture="checker_tex"   texrepeat="1 1"   rgba="1 1 1 1"/>
+  </asset>
+
+  <worldbody>
+
+    <body name="calib_charuco" pos="0 0 0.01">
+      <geom group="0" name="charuco_pattern" type="box" size="0.16 0.125 0.001" pos="0 0 0.00" material="charuco_mat" rgba="1 1 1 1" contype="0" conaffinity="0"/> 
+      <geom group="1" name="charuco_back" type="box" size="0.16 0.125 0.0005" pos="0 0 -0.001" rgba="1 1 1 1" contype="0" conaffinity="0"/> 
+      <!-- Optional site at board center -->
+      <site name="charuco_center" pos="0 0 0" size="0.002" type="sphere" rgba="1 0 0 1"/>
+      <site name="charuco_origin" pos="-0.14 0.1 0" quat="0 1 0 0" size="0.002" type="sphere" rgba="1 1 0 1"/>
+    </body>
+
+    <body name="calib_checker" pos="0 0 0.01">
+      <geom group="1" name="checker_pattern" type="box" size="0.16 0.125 0.001" pos="0 0 0.00" material="checker_mat" rgba="1 1 1 1" contype="0" conaffinity="0"/> 
+      <geom group="1" name="checker_back" type="box" size="0.16 0.125 0.0005" pos="0 0 -0.001" rgba="1 1 1 1" contype="0" conaffinity="0"/> 
+      <!-- Optional site at board center -->
+      <site name="checker_center" pos="0 0 0" size="0.002" type="sphere" rgba="1 0 0 1"/>
+      <site name="checker_origin" pos="0.08 -0.06 0" quat="0 0 -1 0" size="0.002" type="sphere" rgba="1 1 0 1"/>
+    </body>
+
+  </worldbody>
+</mujoco>

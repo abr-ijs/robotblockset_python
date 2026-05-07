@@ -1,0 +1,141 @@
+<!-- ======================================================
+	MuJoCo model
+	
+	Model   : Yaskawa HC20 - joint pos control
+	Author  : Leon Zlajpah
+
+	Copyright 2025 IJS 
+
+====================================================== -->
+<mujoco model="motoman_hc20">
+  <compiler angle="radian" meshdir="assets/"/>
+
+  <option integrator="implicitfast"/>
+
+  <default>
+    <default class="robot">
+      <material specular="0.5" shininess="0.25"/>
+      <joint axis="0 0 1" range="-3.14159 3.14159" />
+      <general dyntype="none" biastype="affine" ctrlrange="-3.14159 3.14159" forcerange="-1200 1200"/>
+      <position kp="10000" dampratio="1" />
+      <!--motor ctrlrange="-1000 1000"/-->
+      
+      <default class="visual">
+        <geom type="mesh" contype="0" conaffinity="0" group="2"/>
+      </default>
+      
+      <default class="collision">
+        <geom type="mesh" group="3"/>
+      </default>
+    </default>
+  </default>
+
+  <asset>
+    <material class="robot" name="white" rgba="0.99 0.99 0.99 1"/>
+
+    <!-- Collision meshes -->
+    <mesh name="base_link_c" content_type="model/stl" file="hc20/base_link.stl"/>
+    <mesh name="link_1_s_c"  content_type="model/stl" file="hc20/link_1_s.stl"/>
+    <mesh name="link_2_l_c"  content_type="model/stl" file="hc20/link_2_l.stl"/>
+    <mesh name="link_3_u_c"  content_type="model/stl" file="hc20/link_3_u.stl"/>
+    <mesh name="link_4_r_c"  content_type="model/stl" file="hc20/link_4_r.stl"/>
+    <mesh name="link_5_b_c"  content_type="model/stl" file="hc20/link_5_b.stl"/>
+    <mesh name="link_6_t_c"  content_type="model/stl" file="hc20/link_6_t.stl"/>
+
+    <!-- Visual meshes -->
+    <mesh name="base_link" content_type="model/obj" file="hc20/base_link.obj"/>
+    <mesh name="link_1_s"  content_type="model/obj" file="hc20/link_1_s.obj"/>
+    <mesh name="link_2_l"  content_type="model/obj" file="hc20/link_2_l.obj"/>
+    <mesh name="link_3_u"  content_type="model/obj" file="hc20/link_3_u.obj"/>
+    <mesh name="link_4_r"  content_type="model/obj" file="hc20/link_4_r.obj"/>
+    <mesh name="link_5_b"  content_type="model/obj" file="hc20/link_5_b.obj"/>
+    <mesh name="link_6_t"  content_type="model/obj" file="hc20/link_6_t.obj"/>    
+  </asset>
+
+  <worldbody>
+    <body name="base" mocap="true" childclass="robot">
+      <geom type="mesh" material="white" mesh="base_link" class="visual"/>
+      <geom type="mesh" mesh="base_link_c" class="collision"/>
+      <body name="link1" pos="0 0 0.38">
+        <joint name="joint1" pos="0 0 0" axis="0 0 1" range="-3.14159 3.14159" actuatorfrcrange="-917.28 917.28"/>
+        <geom type="mesh" material="white" mesh="link_1_s" class="visual"/>
+        <geom type="mesh" mesh="link_1_s_c" class="collision"/>
+        <body name="link2" pos="0 0 0">
+          <joint name="joint2" pos="0 0 0" axis="0 1 0" range="-3.14159 3.14159" actuatorfrcrange="-1223.04 1223.04"/>
+          <geom type="mesh" material="white" mesh="link_2_l" class="visual"/>
+          <geom type="mesh" mesh="link_2_l_c" class="collision"/>
+          <body name="link3" pos="0 0 0.82">
+            <joint name="joint3" pos="0 0 0" axis="0 -1 0" range="-1.16937 4.31096" actuatorfrcrange="-642.88 642.88"/>
+            <geom type="mesh" material="white" mesh="link_3_u" class="visual"/>
+            <geom type="mesh" mesh="link_3_u_c" class="collision"/>
+            <body name="link4" pos="0.88 0 0">
+              <joint name="joint4" pos="0 0 0" axis="-1 0 0" range="-3.66519 3.66519" actuatorfrcrange="-368.48 368.48"/>
+              <geom type="mesh" material="white" mesh="link_4_r" class="visual"/>
+              <geom type="mesh" mesh="link_4_r_c" class="collision"/>
+              <body name="link5">
+                <joint name="joint5" pos="0 0 0" axis="0 -1 0" range="-3.14159 3.14159" actuatorfrcrange="-141.12 141.12"/>
+                <geom type="mesh" material="white" mesh="link_5_b" class="visual"/>
+                <geom type="mesh" mesh="link_5_b_c" class="collision"/>
+                <body name="link6">
+                  <joint name="joint6" pos="0 0 0" axis="-1 0 0" range="-3.66519 3.66519" actuatorfrcrange="-141.12 141.12"/>
+                  <geom type="mesh" material="white" mesh="link_6_t" class="visual"/>
+                  <geom type="mesh" mesh="link_6_t_c" class="collision"/>
+                  <body name="flange" pos="0.2 0 0" axisangle="0 1 0 1.5708">
+                    <site group="3" type="cylinder" pos="0.125 0 0" quat="0.70711 0 0.70711 0" size="0.005 0.125" rgba="1 0 0 1"/>
+                    <site group="3" type="cylinder" pos="0 0.125 0" quat="0.70711 0.70711 0 0" size="0.005 0.125" rgba="0 1 0 1"/>
+                    <site group="3" type="cylinder" pos="0 0 0.125" quat="1 0 0 0" size="0.005 0.125" rgba="0 0 1 1"/>
+                    <site group="3" name="flange" pos="0 0 0" axisangle="0 0 1 3.14159"/>
+                    <body name="TCP" pos="0 0 0" axisangle="0 0 1 3.14159">
+                      <site group="4" type="cylinder" pos="0.0625 0 0" quat="0.70711 0 0.70711 0" size="0.005 0.0625" rgba="1 0 0 1"/>
+                      <site group="4" type="cylinder" pos="0 0.0625 0" quat="0.70711 0.70711 0 0" size="0.005 0.0625" rgba="0 1 0 1"/>
+                      <site group="4" type="cylinder" pos="0 0 0.0626" quat="1 0 0 0" size="0.005 0.0625" rgba="0 0 1 1"/>
+                      <site group="4" name="TCP" pos="0 0 0" size="0.008" />
+                      <camera name="Robot" pos="0.1 0 0" xyaxes="1 0 0 0 -1 0" fovy="45"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+  
+  <contact>
+    <exclude name="exclude_1" body1="base" body2="link1"/>
+    <exclude name="exclude_2" body1="link1" body2="link2"/>
+  </contact>
+
+  
+  <actuator>
+    <position class="robot" name="actuator1" joint="joint1" kp="20000" />
+    <position class="robot" name="actuator2" joint="joint2" kp="80000" />
+    <position class="robot" name="actuator3" joint="joint3" kp="20000" ctrlrange="-1.16937 4.31096"/>
+    <position class="robot" name="actuator4" joint="joint4" kp="1000"  dampratio="2" ctrlrange="-3.66519 3.66519"/>
+    <position class="robot" name="actuator5" joint="joint5" kp="500"   dampratio="2" />
+    <position class="robot" name="actuator6" joint="joint6" kp="50"    dampratio="2" ctrlrange="-3.66519 3.66519"/>
+  </actuator>
+
+  <sensor>
+    <framepos name="pos" objtype="site" objname="TCP" />
+    <framequat name="ori" objtype="site" objname="TCP" />
+    <framelinvel name="v" objtype="site" objname="TCP" />
+    <frameangvel name="w" objtype="site" objname="TCP" />
+    <force name="force" site="TCP" noise="0.5" />
+    <torque name="torque" site="TCP" noise="0.5" />
+    <jointpos name="pos_joint1" joint="joint1" />
+    <jointpos name="pos_joint2" joint="joint2" />
+    <jointpos name="pos_joint3" joint="joint3" />
+    <jointpos name="pos_joint4" joint="joint4" />
+    <jointpos name="pos_joint5" joint="joint5" />
+    <jointpos name="pos_joint6" joint="joint6" />
+    <jointvel name="vel_joint1" joint="joint1" />
+    <jointvel name="vel_joint2" joint="joint2" />
+    <jointvel name="vel_joint3" joint="joint3" />
+    <jointvel name="vel_joint4" joint="joint4" />
+    <jointvel name="vel_joint5" joint="joint5" />
+    <jointvel name="vel_joint6" joint="joint6" />
+  </sensor>
+  
+</mujoco>

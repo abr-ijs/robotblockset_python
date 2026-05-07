@@ -1,0 +1,44 @@
+tools:
+  gripper_small:
+    id: 0                                   # Tool id 
+    tcp:
+      position: [0.0, 0.0, 0.120]           # meters
+      orientation: [1.0, 0.0, 0.0, 0.0]     # quaternion (w, x, y, z)
+    load:
+      mass: 0.45                            # kg
+      com: [0.0, 0.0, 0.060]                # meters (in TCP or flange frame)
+      inertia:                              # kg·m² (3x3)
+        - [0.0005, 0.0,    0.0]
+        - [0.0,    0.0004, 0.0]
+        - [0.0,    0.0,    0.0003]
+    mounted_on: "flange"                       # where tools is mounted ("gripper" or "flange")   
+
+  gripper_large:
+    id: 1
+    tcp:
+      position: [0.0, 0.0, 0.180]
+      orientation: [1.0, 0.0, 0.0, 0.0]     
+    load:
+      mass: 1.20
+      com: [0.0, 0.0, 0.090]
+      inertia:
+        - [0.0015, 0.0,    0.0]
+        - [0.0,    0.0012, 0.0]
+        - [0.0,    0.0,    0.0010]
+    mounted_on: "flange"                       
+
+  camera_tool:
+    id: 2
+    tcp:
+      position: [0.05, 0.0, 0.150]
+      orientation: [0.7071, 0.0, 0.0, 0.7071]
+    load:
+      mass: 0.80
+      com: [0.02, 0.0, 0.080]
+      inertia:
+        - [0.0008, 0.0,    0.0]
+        - [0.0,    0.0007, 0.0]
+        - [0.0,    0.0,    0.0006]
+    mounted_on: "gripper"                       
+
+default_tool: gripper_small

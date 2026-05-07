@@ -1,0 +1,46 @@
+/* Keep classic theme sidebar entries from shrinking after level 2. */
+div.sphinxsidebarwrapper ul li.toctree-l2 > a,
+div.sphinxsidebarwrapper ul li.toctree-l3 > a,
+div.sphinxsidebarwrapper ul li.toctree-l4 > a,
+div.sphinxsidebarwrapper ul li.toctree-l5 > a,
+div.sphinxsidebarwrapper ul li.toctree-l6 > a {
+    font-size: 1em;
+}
+
+/* Increase inline and block code readability in the classic theme. */
+code,
+tt,
+pre,
+div.highlight pre,
+div.body pre,
+div.body code.literal {
+    font-size: 1.08em;
+}
+
+/* Make inline backtick-rendered literals stand out more in running text. */
+div.body p code.literal,
+div.body li code.literal,
+div.body dd code.literal,
+div.body td code.literal,
+div.body p tt,
+div.body li tt,
+div.body dd tt,
+div.body td tt {
+    font-size: 1.18em;
+}
+
+/* Increase readability of autosummary and other doc tables. */
+table.docutils,
+table.docutils td,
+table.docutils th,
+table.autosummary,
+table.autosummary td,
+table.autosummary th {
+    font-size: 1.08em;
+}
+
+/* Make autosummary item names match the surrounding signature text better. */
+table.autosummary td:first-child code.xref,
+table.autosummary td:first-child a code {
+    font-size: 1.18em;
+}

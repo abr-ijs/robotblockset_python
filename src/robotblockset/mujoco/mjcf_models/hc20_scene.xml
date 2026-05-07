@@ -1,0 +1,160 @@
+<!-- ======================================================
+	MuJoCo model
+	
+	Model   : Yaskawa HC20 scene
+	Author  : Leon Zlajpah
+
+	Copyright 2025 IJS 
+
+====================================================== -->
+<mujoco model="hc20_scene">
+  <compiler angle="radian" meshdir="assets/" texturedir="assets/"/>
+
+  <option timestep="0.001" integrator="implicitfast"/>
+
+  <visual>
+    <global offwidth="1280" offheight="960"/>
+    <map stiffness="700" fogstart="1" fogend="15" zfar="40" haze="1" shadowscale="0.5"/>
+    <rgba haze="0.15 0.25 0.35 1"/>
+  </visual>
+
+  <statistic meansize="0.05"/>
+
+  <default>
+    <light castshadow="false"/>
+    <general biastype="affine" biasprm="0 -1"/>
+    <default class="hc20_main">
+      <light castshadow="true"/>
+      <general biastype="none" biasprm="0 0"/>
+      <default class="hc20_robot">
+        <material shininess="0.25"/>
+        <joint range="-3.14159 3.14159"/>
+        <general ctrlrange="-3.14159 3.14159" forcerange="-1200 1200" biastype="affine" gainprm="10000" biasprm="0 -10000 1"/>
+        <default class="hc20_visual">
+          <geom type="mesh" contype="0" conaffinity="0" group="2"/>
+        </default>
+        <default class="hc20_collision">
+          <geom type="mesh" group="3"/>
+        </default>
+      </default>
+    </default>
+  </default>
+
+  <asset>
+    <texture type="skybox" colorspace="auto" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="3072"/>
+    <texture type="2d" colorspace="auto" name="texplane" builtin="checker" mark="cross" rgb1="0.2 0.3 0.4" rgb2="0.1 0.15 0.2" markrgb="0.8 0.8 0.8" width="512" height="512"/>
+    <material name="matplane" texture="texplane" texuniform="true" texrepeat="10 10" reflectance="0.3"/>
+    <material name="hc20_white" class="hc20_robot" rgba="0.99 0.99 0.99 1"/>
+    <mesh name="hc20_base_link_c" content_type="model/stl" file="hc20/base_link.stl"/>
+    <mesh name="hc20_link_1_s_c" content_type="model/stl" file="hc20/link_1_s.stl"/>
+    <mesh name="hc20_link_2_l_c" content_type="model/stl" file="hc20/link_2_l.stl"/>
+    <mesh name="hc20_link_3_u_c" content_type="model/stl" file="hc20/link_3_u.stl"/>
+    <mesh name="hc20_link_4_r_c" content_type="model/stl" file="hc20/link_4_r.stl"/>
+    <mesh name="hc20_link_5_b_c" content_type="model/stl" file="hc20/link_5_b.stl"/>
+    <mesh name="hc20_link_6_t_c" content_type="model/stl" file="hc20/link_6_t.stl"/>
+    <mesh name="hc20_base_link" content_type="model/obj" file="hc20/base_link.obj"/>
+    <mesh name="hc20_link_1_s" content_type="model/obj" file="hc20/link_1_s.obj"/>
+    <mesh name="hc20_link_2_l" content_type="model/obj" file="hc20/link_2_l.obj"/>
+    <mesh name="hc20_link_3_u" content_type="model/obj" file="hc20/link_3_u.obj"/>
+    <mesh name="hc20_link_4_r" content_type="model/obj" file="hc20/link_4_r.obj"/>
+    <mesh name="hc20_link_5_b" content_type="model/obj" file="hc20/link_5_b.obj"/>
+    <mesh name="hc20_link_6_t" content_type="model/obj" file="hc20/link_6_t.obj"/>
+  </asset>
+
+  <worldbody>
+    <geom name="ground" size="0 0 1" type="plane" condim="1" material="matplane"/>
+    <site pos="0.5 0 0" quat="0.707107 0 0.707107 0" size="0.005 0.5" type="cylinder" rgba="1 0 0 1"/>
+    <site pos="0 0.5 0" quat="0.707107 0.707107 0 0" size="0.005 0.5" type="cylinder" rgba="0 1 0 1"/>
+    <site pos="0 0 0.5" size="0.005 0.5" type="cylinder" rgba="0 0 1 1"/>
+    <light pos="0 0 2" dir="0 0 -1" diffuse="0.4 0.4 0.4" specular="0.1 0.1 0.1"/>
+    <light pos="0 0 4" dir="0 0 -1" type="directional" diffuse="0.8 0.8 0.8" specular="0.2 0.2 0.2"/>
+    <body name="Target" mocap="true">
+      <site pos="0.05 0 0" quat="0.707107 0 0.707107 0" size="0.002 0.05" group="4" type="cylinder" rgba="1 0 0 1"/>
+      <site pos="0 0.05 0" quat="0.707107 0.707107 0 0" size="0.002 0.05" group="4" type="cylinder" rgba="0 1 0 1"/>
+      <site pos="0 0 0.05" size="0.002 0.05" group="4" type="cylinder" rgba="0 0 1 1"/>
+      <site name="Target" pos="0 0 0" size="0.01" group="1" rgba="1 0.5 1 0.5"/>
+    </body>
+    <body name="hc20" childclass="hc20_robot" mocap="true">
+      <geom class="hc20_visual" material="hc20_white" mesh="hc20_base_link"/>
+      <geom class="hc20_collision" mesh="hc20_base_link_c"/>
+      <body name="hc20_link1" pos="0 0 0.38">
+        <joint name="hc20_joint1" pos="0 0 0" axis="0 0 1" actuatorfrcrange="-917.28 917.28"/>
+        <geom class="hc20_visual" material="hc20_white" mesh="hc20_link_1_s"/>
+        <geom class="hc20_collision" mesh="hc20_link_1_s_c"/>
+        <body name="hc20_link2">
+          <joint name="hc20_joint2" pos="0 0 0" axis="0 1 0" actuatorfrcrange="-1223.04 1223.04"/>
+          <geom class="hc20_visual" material="hc20_white" mesh="hc20_link_2_l"/>
+          <geom class="hc20_collision" mesh="hc20_link_2_l_c"/>
+          <body name="hc20_link3" pos="0 0 0.82">
+            <joint name="hc20_joint3" pos="0 0 0" axis="0 -1 0" range="-1.16937 4.31096" actuatorfrcrange="-642.88 642.88"/>
+            <geom class="hc20_visual" material="hc20_white" mesh="hc20_link_3_u"/>
+            <geom class="hc20_collision" mesh="hc20_link_3_u_c"/>
+            <body name="hc20_link4" pos="0.88 0 0">
+              <joint name="hc20_joint4" pos="0 0 0" axis="-1 0 0" range="-3.66519 3.66519" actuatorfrcrange="-368.48 368.48"/>
+              <geom class="hc20_visual" material="hc20_white" mesh="hc20_link_4_r"/>
+              <geom class="hc20_collision" mesh="hc20_link_4_r_c"/>
+              <body name="hc20_link5">
+                <joint name="hc20_joint5" pos="0 0 0" axis="0 -1 0" actuatorfrcrange="-141.12 141.12"/>
+                <geom class="hc20_visual" material="hc20_white" mesh="hc20_link_5_b"/>
+                <geom class="hc20_collision" mesh="hc20_link_5_b_c"/>
+                <body name="hc20_link6">
+                  <joint name="hc20_joint6" pos="0 0 0" axis="-1 0 0" range="-3.66519 3.66519" actuatorfrcrange="-141.12 141.12"/>
+                  <geom class="hc20_visual" material="hc20_white" mesh="hc20_link_6_t"/>
+                  <geom class="hc20_collision" mesh="hc20_link_6_t_c"/>
+                  <body name="hc20_flange" pos="0.2 0 0" quat="0.707105 0 0.707108 0">
+                    <site pos="0.125 0 0" quat="0.707107 0 0.707107 0" size="0.005 0.125" group="3" type="cylinder" rgba="1 0 0 1"/>
+                    <site pos="0 0.125 0" quat="0.707107 0.707107 0 0" size="0.005 0.125" group="3" type="cylinder" rgba="0 1 0 1"/>
+                    <site pos="0 0 0.125" size="0.005 0.125" group="3" type="cylinder" rgba="0 0 1 1"/>
+                    <site name="hc20_flange" pos="0 0 0" quat="1.32679e-06 0 0 1" group="3"/>
+                    <body name="hc20_TCP" quat="1.32679e-06 0 0 1">
+                      <site pos="0.0625 0 0" quat="0.707107 0 0.707107 0" size="0.005 0.0625" group="4" type="cylinder" rgba="1 0 0 1"/>
+                      <site pos="0 0.0625 0" quat="0.707107 0.707107 0 0" size="0.005 0.0625" group="4" type="cylinder" rgba="0 1 0 1"/>
+                      <site pos="0 0 0.0626" size="0.005 0.0625" group="4" type="cylinder" rgba="0 0 1 1"/>
+                      <site name="hc20_TCP" pos="0 0 0" size="0.008" group="4"/>
+                      <camera name="hc20_Robot" pos="0.1 0 0" quat="0 1 0 0"/>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <contact>
+    <exclude name="hc20_exclude_1" body1="hc20" body2="hc20_link1"/>
+    <exclude name="hc20_exclude_2" body1="hc20_link1" body2="hc20_link2"/>
+  </contact>
+
+  <actuator>
+    <general name="hc20_actuator1" class="hc20_robot" joint="hc20_joint1" gainprm="20000" biasprm="0 -20000"/>
+    <general name="hc20_actuator2" class="hc20_robot" joint="hc20_joint2" gainprm="80000" biasprm="0 -80000"/>
+    <general name="hc20_actuator3" class="hc20_robot" joint="hc20_joint3" ctrlrange="-1.16937 4.31096" gainprm="20000" biasprm="0 -20000"/>
+    <general name="hc20_actuator4" class="hc20_robot" joint="hc20_joint4" ctrlrange="-3.66519 3.66519" gainprm="1000" biasprm="0 -1000 2"/>
+    <general name="hc20_actuator5" class="hc20_robot" joint="hc20_joint5" gainprm="500" biasprm="0 -500 2"/>
+    <general name="hc20_actuator6" class="hc20_robot" joint="hc20_joint6" ctrlrange="-3.66519 3.66519" gainprm="50" biasprm="0 -50 2"/>
+  </actuator>
+
+  <sensor>
+    <framepos objtype="site" objname="hc20_TCP" name="hc20_pos"/>
+    <framequat objtype="site" objname="hc20_TCP" name="hc20_ori"/>
+    <framelinvel objtype="site" objname="hc20_TCP" name="hc20_v"/>
+    <frameangvel objtype="site" objname="hc20_TCP" name="hc20_w"/>
+    <force site="hc20_TCP" name="hc20_force" noise="0.5"/>
+    <torque site="hc20_TCP" name="hc20_torque" noise="0.5"/>
+    <jointpos joint="hc20_joint1" name="hc20_pos_joint1"/>
+    <jointpos joint="hc20_joint2" name="hc20_pos_joint2"/>
+    <jointpos joint="hc20_joint3" name="hc20_pos_joint3"/>
+    <jointpos joint="hc20_joint4" name="hc20_pos_joint4"/>
+    <jointpos joint="hc20_joint5" name="hc20_pos_joint5"/>
+    <jointpos joint="hc20_joint6" name="hc20_pos_joint6"/>
+    <jointvel joint="hc20_joint1" name="hc20_vel_joint1"/>
+    <jointvel joint="hc20_joint2" name="hc20_vel_joint2"/>
+    <jointvel joint="hc20_joint3" name="hc20_vel_joint3"/>
+    <jointvel joint="hc20_joint4" name="hc20_vel_joint4"/>
+    <jointvel joint="hc20_joint5" name="hc20_vel_joint5"/>
+    <jointvel joint="hc20_joint6" name="hc20_vel_joint6"/>
+  </sensor>
+</mujoco>

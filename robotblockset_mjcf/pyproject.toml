@@ -1,0 +1,26 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "robotblockset-mjcf"
+version = "1.1.0"
+description = "MJCF model assets for rbs-test."
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+authors = [
+  { name = "Leon Zlajpah", email = "leon.zlajpah@ijs.si" },
+]
+dependencies = [
+  "robotblockset",
+]
+
+[project.urls]
+Homepage = "https://github.com/abr-ijs/robotblockset_python"
+
+[tool.hatch.build.targets.wheel]
+packages = []
+
+[tool.hatch.build.targets.wheel.force-include]
+"../src/robotblockset/mujoco/mjcf_models" = "robotblockset/mujoco/mjcf_models"

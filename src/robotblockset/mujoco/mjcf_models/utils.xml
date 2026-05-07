@@ -1,0 +1,22 @@
+<!-- ======================================================
+	MuJoCo model
+	
+	Model   : Utility objects
+	Author  : Leon Zlajpah
+
+	Copyright 2025 IJS 
+
+====================================================== -->
+<mujoco model="utils">
+  <worldbody>
+    <light directional="false" cutoff="135" exponent="10" diffuse=".7 .7 .7" pos="0.4 -0.2 5.5" dir="-0.4 0.2 -5.5" specular=".3 .3 .3"/>
+    <body name="Box" pos="0 0 0" axisangle="1 0 0 0">
+      <site name="x" group="5" pos="0.05 0 0" quat="0.707107 0 0.707107 0" size="0.001 0.1" type="cylinder" rgba="1 0 0 1"/>
+      <site name="y" group="5" pos="0 0.05 0" quat="0.707107 0.707107 0 0" size="0.001 0.1" type="cylinder" rgba="0 1 0 1"/>
+      <site name="z" group="5" pos="0 0 0.05" size="0.001 0.1" type="cylinder" rgba="0 0 1 1"/>
+      <geom name="Box" group="0" type="box" pos="0 0 0" size="0.05 0.05 0.05" solref="-100 -100" friction="1 0.9 0.9" rgba="1 .6 1 1"/>
+      <freejoint/>
+    </body>
+  </worldbody>
+</mujoco>
+

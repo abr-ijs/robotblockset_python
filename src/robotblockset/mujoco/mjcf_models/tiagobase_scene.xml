@@ -1,0 +1,179 @@
+<mujoco model="tiagobase_scene">
+  <compiler angle="radian" meshdir="assets/" texturedir="assets/"/>
+
+  <option timestep="0.001" integrator="implicitfast"/>
+
+  <visual>
+    <global offwidth="1280" offheight="960"/>
+    <map stiffness="700" fogstart="1" fogend="15" zfar="40" haze="1" shadowscale="0.5"/>
+    <rgba haze="0.15 0.25 0.35 1"/>
+  </visual>
+
+  <statistic meansize="0.05"/>
+
+  <default>
+    <geom solref="0.002" margin="0.001"/>
+    <light castshadow="false"/>
+    <general biastype="affine" biasprm="0 -1"/>
+    <default class="tiagobase_main">
+      <geom solref="0.02" margin="0"/>
+      <default class="tiagobase_platform">
+        <joint limited="false" armature="5" damping="5"/>
+        <geom contype="0" condim="4" margin="0.0001" material="BodyWhite"/>
+        <site size="0.01 0.005 0.005" group="3"/>
+        <general ctrllimited="false" ctrlrange="-3000 3000" gainprm="320" biasprm="0 -320 -20"/>
+      </default>
+    </default>
+  </default>
+
+  <asset>
+    <texture type="skybox" colorspace="auto" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="3072"/>
+    <texture type="2d" colorspace="auto" name="texplane" builtin="checker" mark="cross" rgb1="0.2 0.3 0.4" rgb2="0.1 0.15 0.2" markrgb="0.8 0.8 0.8" width="512" height="512"/>
+    <material name="matplane" texture="texplane" texuniform="true" texrepeat="10 10" reflectance="0.3"/>
+    <material name="tiagobase_BodyWhite" specular="0.3" shininess="0.6" rgba="0.99 0.99 0.85 1"/>
+    <material name="tiagobase_SiteOrange" rgba="0.3 0.9 0.3 0.3"/>
+    <material name="tiagobase_Blue" rgba="0 0 0.8 1"/>
+    <material name="tiagobase_Green" rgba="0 0.8 0 1"/>
+    <material name="tiagobase_Grey" rgba="0.7 0.7 0.7 1"/>
+    <material name="tiagobase_LightGrey" rgba="0.9 0.9 0.9 1"/>
+    <material name="tiagobase_DarkGrey" rgba="0.2 0.2 0.2 1"/>
+    <material name="tiagobase_Red" rgba="0.8 0 0 1"/>
+    <material name="tiagobase_White"/>
+    <material name="tiagobase_Orange" rgba="1 0.69 0 1"/>
+    <mesh name="tiagobase_base_collision" content_type="model/stl" file="tiagobase/base_collision.stl" scale="0.99 0.99 0.99"/>
+    <mesh name="tiagobase_base" content_type="model/stl" file="tiagobase/base.stl"/>
+    <mesh name="tiagobase_wheel" content_type="model/stl" file="tiagobase/wheel.stl"/>
+    <mesh name="tiagobase_hokuyo_urg_04lx_ug01" content_type="model/stl" file="tiagobase/hokuyo_urg_04lx_ug01.stl"/>
+    <mesh name="tiagobase_cover" content_type="model/stl" file="tiagobase/cover.stl"/>
+    <mesh name="tiagobase_bumper" content_type="model/stl" file="tiagobase/bumper.stl"/>
+    <mesh name="tiagobase_base_ring" content_type="model/stl" file="tiagobase/base_ring.stl"/>
+    <mesh name="tiagobase_antenna" content_type="model/stl" file="tiagobase/antenna.stl"/>
+    <mesh name="tiagobase_bumper_collision" content_type="model/stl" file="tiagobase/bumper_collision.stl"/>
+    <mesh name="tiagobase_srf05" content_type="model/stl" file="tiagobase/srf05.stl"/>
+    <mesh name="tiagobase_caster_1" content_type="model/stl" file="tiagobase/caster_1.stl"/>
+    <mesh name="tiagobase_caster_2" content_type="model/stl" file="tiagobase/caster_2.stl"/>
+    <mesh name="tiagobase_structure_sensor" content_type="model/stl" file="tiagobase/structure_sensor.stl"/>
+  </asset>
+
+  <worldbody>
+    <geom name="ground" size="0 0 1" type="plane" condim="1" material="matplane"/>
+    <site pos="0.5 0 0" quat="0.707107 0 0.707107 0" size="0.005 0.5" type="cylinder" rgba="1 0 0 1"/>
+    <site pos="0 0.5 0" quat="0.707107 0.707107 0 0" size="0.005 0.5" type="cylinder" rgba="0 1 0 1"/>
+    <site pos="0 0 0.5" size="0.005 0.5" type="cylinder" rgba="0 0 1 1"/>
+    <light pos="0 0 2" dir="0 0 -1" diffuse="0.4 0.4 0.4" specular="0.1 0.1 0.1"/>
+    <light pos="0 0 4" dir="0 0 -1" type="directional" diffuse="0.8 0.8 0.8" specular="0.2 0.2 0.2"/>
+    <body name="Target" mocap="true">
+      <site pos="0.05 0 0" quat="0.707107 0 0.707107 0" size="0.002 0.05" group="4" type="cylinder" rgba="1 0 0 1"/>
+      <site pos="0 0.05 0" quat="0.707107 0.707107 0 0" size="0.002 0.05" group="4" type="cylinder" rgba="0 1 0 1"/>
+      <site pos="0 0 0.05" size="0.002 0.05" group="4" type="cylinder" rgba="0 0 1 1"/>
+      <site name="Target" pos="0 0 0" size="0.01" group="1" rgba="1 0.5 1 0.5"/>
+    </body>
+    <body name="tiagobase" childclass="tiagobase_platform">
+      <inertial pos="0 0 0" mass="1e-10" diaginertia="1e-10 1e-10 1e-10"/>
+      <joint type="free"/>
+      <site name="tiagobase_x" pos="0.25 0 0" quat="0.707107 0 0.707107 0" size="0.01 0.25" group="2" type="cylinder" rgba="1 0 0 1"/>
+      <site name="tiagobase_y" pos="0 0.25 0" quat="0.707107 0.707107 0 0" size="0.01 0.25" group="2" type="cylinder" rgba="0 1 0 1"/>
+      <site name="tiagobase_z" pos="0 0 0.25" size="0.01 0.25" group="2" type="cylinder" rgba="0 0 1 1"/>
+      <body name="tiagobase_base_link" pos="0 0 0.0985">
+        <inertial pos="-1.06e-06 1.09e-06 3.87e-05" quat="0.0376483 0.698692 -0.0458148 0.712961" mass="28.2665" diaginertia="0.550983 0.483441 0.465118"/>
+        <geom type="mesh" material="tiagobase_White" mesh="tiagobase_base_collision"/>
+        <geom type="mesh" material="tiagobase_Grey" mesh="tiagobase_base"/>
+        <site name="tiagobase_base" pos="0 0 0"/>
+        <body name="tiagobase_mounting_base" pos="0 0 0.2">
+          <site name="tiagobase_mounting_base" pos="0 0 0"/>
+        </body>
+        <body name="tiagobase_laser_link" pos="0.202 0 -0.004">
+          <inertial pos="-0.02559 -0.00056 -0.05732" quat="0.00952961 0.665995 -0.011891 0.7458" mass="0.28922" diaginertia="5.87436e-05 3.37527e-05 2.58643e-05"/>
+          <geom type="mesh" material="tiagobase_BodyWhite" mesh="tiagobase_hokuyo_urg_04lx_ug01"/>
+        </body>
+        <body name="tiagobase_sonar_03_link" pos="-0.183 0.183 0.173" quat="0.382683 0 0 0.92388">
+          <inertial pos="0 0 0" mass="0.001" diaginertia="1e-06 1e-06 1e-06"/>
+          <geom type="mesh" material="tiagobase_DarkGrey" mesh="tiagobase_srf05"/>
+        </body>
+        <body name="tiagobase_sonar_02_link" pos="-0.259 0 0.173" quat="0 0 0 1">
+          <inertial pos="0 0 0" mass="0.001" diaginertia="1e-06 1e-06 1e-06"/>
+          <geom type="mesh" material="tiagobase_DarkGrey" mesh="tiagobase_srf05"/>
+        </body>
+        <body name="tiagobase_sonar_01_link" pos="-0.183 -0.183 0.173" quat="-0.382683 0 0 0.92388">
+          <inertial pos="0 0 0" mass="0.001" diaginertia="1e-06 1e-06 1e-06"/>
+          <geom type="mesh" material="tiagobase_DarkGrey" mesh="tiagobase_srf05"/>
+        </body>
+        <body name="tiagobase_imu_link" pos="0.10171 0 0.11282" quat="0.707107 0 0 -0.707107">
+          <inertial pos="0 0 0" mass="0.01" diaginertia="1e-06 1e-06 1e-06"/>
+        </body>
+        <body name="tiagobase_suspension_right_link">
+          <inertial pos="0 0 -0.02" mass="10" diaginertia="1 1 1"/>
+          <joint name="tiagobase_suspension_right_joint" pos="0 0 0" axis="0 0 1" type="slide" limited="true" range="-0.005 0.005"/>
+          <body name="tiagobase_wheel_right_link" pos="0 -0.2022 0" quat="0.707107 -0.707107 0 0">
+            <inertial pos="0 0 -0.00207" quat="0.296456 0.641958 -0.296458 0.641963" mass="100.824" diaginertia="0.0083924 0.00499747 0.00499738"/>
+            <joint name="tiagobase_joint2" pos="0 0 0" axis="0 0 1"/>
+            <geom name="tiagobase_wheel2" size="0.0985 0.02" type="cylinder" material="tiagobase_BodyWhite" rgba="0.92 0.92 0.2 1"/>
+          </body>
+        </body>
+        <body name="tiagobase_suspension_left_link">
+          <inertial pos="0 0 -0.02" mass="10" diaginertia="1 1 1"/>
+          <joint name="tiagobase_suspension_left_joint" pos="0 0 0" axis="0 0 1" type="slide" limited="true" range="-0.005 0.005"/>
+          <body name="tiagobase_wheel_left_link" pos="0 0.2022 0" quat="0.707107 -0.707107 0 0">
+            <inertial pos="0 0 0.00207" quat="0.641958 0.296456 -0.641963 0.296458" mass="100.824" diaginertia="0.0083924 0.00499747 0.00499738"/>
+            <joint name="tiagobase_joint1" pos="0 0 0" axis="0 0 1"/>
+            <geom name="tiagobase_wheel1" size="0.0985 0.02" type="cylinder" material="tiagobase_BodyWhite" rgba="0.2 0.2 0.2 1"/>
+          </body>
+        </body>
+        <body name="tiagobase_caster_front_right_1_link" pos="0.1695 -0.102 -0.0335">
+          <inertial pos="-0.00634599 5.347e-05 -0.0203752" quat="0.966491 -0.00340536 -0.256544 -0.00828025" mass="0.0514476" diaginertia="1.66556e-05 1.30896e-05 1.04548e-05"/>
+          <joint name="tiagobase_caster_front_right_1_joint" pos="0 0 0" axis="0 0 1"/>
+          <body name="tiagobase_caster_front_right_2_link" pos="-0.016 0 -0.04" quat="0.707107 -0.707107 0 0">
+            <inertial pos="0 0 0" quat="0.707107 0 0 0.707107" mass="0.0885578" diaginertia="1.541e-05 1.075e-05 1.075e-05"/>
+            <joint name="tiagobase_caster_front_right_2_joint" pos="0 0 0" type="ball" damping="0.01"/>
+            <geom size="0.025" material="tiagobase_BodyWhite" rgba="0.2 0.2 0.2 1"/>
+          </body>
+        </body>
+        <body name="tiagobase_caster_front_left_1_link" pos="0.1695 0.102 -0.0335">
+          <inertial pos="-0.00634599 5.347e-05 -0.0203752" quat="0.966491 -0.00340536 -0.256544 -0.00828025" mass="0.0514476" diaginertia="1.66556e-05 1.30896e-05 1.04548e-05"/>
+          <joint name="tiagobase_caster_front_left_1_joint" pos="0 0 0" axis="0 0 1"/>
+          <body name="tiagobase_caster_front_left_2_link" pos="-0.016 0 -0.04" quat="0.707107 -0.707107 0 0">
+            <inertial pos="0 0 0" quat="0.707107 0 0 0.707107" mass="0.0885578" diaginertia="1.541e-05 1.075e-05 1.075e-05"/>
+            <joint name="tiagobase_caster_front_left_2_joint" pos="0 0 0" type="ball" damping="0.01"/>
+            <geom size="0.025" material="tiagobase_BodyWhite" rgba="0.2 0.2 0.2 1"/>
+          </body>
+        </body>
+        <body name="tiagobase_caster_back_right_1_link" pos="-0.1735 -0.102 -0.0335">
+          <inertial pos="-0.00634599 5.347e-05 -0.0203752" quat="0.966491 -0.00340536 -0.256544 -0.00828025" mass="0.0514476" diaginertia="1.66556e-05 1.30896e-05 1.04548e-05"/>
+          <joint name="tiagobase_caster_back_right_1_joint" pos="0 0 0" axis="0 0 1"/>
+          <body name="tiagobase_caster_back_right_2_link" pos="-0.016 0 -0.04" quat="0.707107 -0.707107 0 0">
+            <inertial pos="0 0 0" quat="0.707107 0 0 0.707107" mass="0.0885578" diaginertia="1.541e-05 1.075e-05 1.075e-05"/>
+            <joint name="tiagobase_caster_back_right_2_joint" pos="0 0 0" type="ball" damping="0.01"/>
+            <geom size="0.025" material="tiagobase_BodyWhite" rgba="0.2 0.2 0.2 1"/>
+          </body>
+        </body>
+        <body name="tiagobase_caster_back_left_1_link" pos="-0.1735 0.102 -0.0335">
+          <inertial pos="-0.00634599 5.347e-05 -0.0203752" quat="0.966491 -0.00340536 -0.256544 -0.00828025" mass="0.0514476" diaginertia="1.66556e-05 1.30896e-05 1.04548e-05"/>
+          <joint name="tiagobase_caster_back_left_1_joint" pos="0 0 0" axis="0 0 1"/>
+          <body name="tiagobase_caster_back_left_2_link" pos="-0.016 0 -0.04" quat="0.707107 -0.707107 0 0">
+            <inertial pos="0 0 0" quat="0.707107 0 0 0.707107" mass="0.0885578" diaginertia="1.541e-05 1.075e-05 1.075e-05"/>
+            <joint name="tiagobase_caster_back_left_2_joint" pos="0 0 0" type="ball" damping="0.01"/>
+            <geom size="0.025" material="tiagobase_BodyWhite" rgba="0.2 0.2 0.2 1"/>
+          </body>
+        </body>
+      </body>
+      <body name="tiagobase_cover_link" pos="0 0 0.13">
+        <inertial pos="0.22414 2e-05 0.04681" quat="0.000495314 0.706824 -0.000442171 0.707389" mass="0.25821" diaginertia="0.000384971 0.000283351 0.000237192"/>
+        <geom type="mesh" material="tiagobase_Orange" mesh="tiagobase_base_ring"/>
+      </body>
+    </body>
+  </worldbody>
+
+  <actuator>
+    <general name="tiagobase_actuator1" class="tiagobase_platform" joint="tiagobase_joint1" gainprm="1000" biasprm="0 0 -1000"/>
+    <general name="tiagobase_actuator2" class="tiagobase_platform" joint="tiagobase_joint2" gainprm="1000" biasprm="0 0 -1000"/>
+  </actuator>
+
+  <sensor>
+    <framepos objtype="site" objname="tiagobase_base" name="tiagobase_pos"/>
+    <framequat objtype="site" objname="tiagobase_base" name="tiagobase_ori"/>
+    <framelinvel objtype="site" objname="tiagobase_base" name="tiagobase_v"/>
+    <frameangvel objtype="site" objname="tiagobase_base" name="tiagobase_w"/>
+    <force site="tiagobase_base" name="tiagobase_force" noise="0.5"/>
+    <torque site="tiagobase_base" name="tiagobase_torque" noise="0.5"/>
+  </sensor>
+</mujoco>
