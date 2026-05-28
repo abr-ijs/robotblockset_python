@@ -1857,8 +1857,11 @@ class multi_robots(robot):
         vi = np.zeros((len(_time), self.nr, 6))
         for i in range(self.nr):
             _xi, _vi, _ = ctraj(x0[i], rx[i], _time, traj=traj, short=short)
-            xi[:, i, :] = _xi
-            vi[:, i, :] = _vi
+            if _xi.shape[0] == xi.shape[0]:
+                xi[:, i, :] = _xi
+                vi[:, i, :] = _vi
+            else:
+                raise ValueError(f"Motion can not be executed in robot {i} ({self.robots[i].Name}): Expected execution time {_time[-1]} - actial time {_xi.shape[0] * self.tsamp}")
         _fac = np.max(np.max(np.abs(vi), axis=0) / _vel)
         if (_fac > 1) or (t is None):
             _tend = max(_time[-1] * _fac, 10 * self.tsamp) + self.tsamp
@@ -1867,8 +1870,11 @@ class multi_robots(robot):
             vi = np.zeros((len(_time), self.nr, 6))
             for i in range(self.nr):
                 _xi, _vi, _ = ctraj(x0[i], rx[i], _time, traj=traj, short=short)
-                xi[:, i, :] = _xi
-                vi[:, i, :] = _vi
+                if _xi.shape[0] == xi.shape[0]:
+                    xi[:, i, :] = _xi
+                    vi[:, i, :] = _vi
+                else:
+                    raise ValueError(f"Motion can not be executed in robot {i} ({self.robots[i].Name}): Expected execution time {_time[-1]} - actial time {_xi.shape[0] * self.tsamp}")
 
         if self._semaphore._value <= 0:
             self.Message("Not executed due to active treads!")
@@ -3266,8 +3272,8 @@ class multi_robots(robot):
 
         self.TCP: np.ndarray = np.stack([r.TCP for r in self.robots], axis=0)
         rx, rJ = self.Kinmodel(self._command.q)
-        self._command.x = self.BaseToWorld(rx)
-        self._command.v = self.BaseToWorld((rJ @ self._command.qdot).reshape((self.nr, 6)), typ="Twist")
+        self._command.x = rx
+        self._command.v = (rJ @ self._command.qdot).reshape((self.nr, 6))
 
     def SetTCPGripper(self, tcp: Optional[np.ndarray] = None, robot_num: Optional[int] = None) -> None:
         """
@@ -3561,11 +3567,16 @@ class bimanual_robot(multi_robots):
     """
     Combined bimanual-robot system
 
-    Relative task: the base is at the end-effector of the first robot and the
-    end-effector is the end-effector of the second robot.
+    Bimanual coordination is expressed with two task definitions:
+        - an **absolute task**, which describes the global motion of the pair
+        - a **relative task**, which describes how the two end-effectors are positioned 
+          with respect to each other
 
-    Absolute task: the base is the base of the first robot and the end-effector
-    is the end-effector of the fiirst robot.
+    Relative position of this robot structure is the pose of the robot defined as follows: 
+    the base is at the end-effector of the first robot and the end-effector is the end-effector 
+    of the second robot.
+
+    The absolute pose of the robot system is defined as the pose of the first robot.
     """
 
     def __init__(self, robots: Tuple[robot, ...], robot_name: Optional[str] = None, **kwargs: Any) -> None:
@@ -3724,11 +3735,25 @@ class bimanual_robot_mean(multi_robots):
     """
     Combined bimanual-robot system
 
-    Relative task: the base is at the end-effector of the first robot and the
-    end-effector is the end-effector of the second robot.
+    Bimanual coordination is expressed with two task definitions:
+        - an **absolute task**, which describes the global motion of the pair
+        - a **relative task**, which describes how the two end-effectors are positioned 
+          with respect to each other
 
-    Absolute task: the base is the base of the first robot and the end-effector
-    is the end-effector of the fiirst robot.
+    Relative position of this robot structure is the pose of the robot defined as follows: 
+    the base is at the end-effector of the first robot and the end-effector is the end-effector 
+    of the second robot.
+
+    The absolute pose of the robot system is defined as the positionpose midway between the end-effector 
+    poses of both robots.
+
+    Notes
+    -----
+    For this bimanual robot configuration the world frame is implicitly defined by the both robot base poses, 
+    which are defined in world frame. The robot base frame for aboslute task is the world frame.
+    
+    WorldToBase, BaseToWorld, WorldToObject And ObjecttoWorld
+    transformation are not defined.
     """
 
     def __init__(self, robots: Tuple[robot, ...], robot_name: Optional[str] = None, **kwargs: Any) -> None:
@@ -3754,7 +3779,6 @@ class bimanual_robot_mean(multi_robots):
         if robot_name is None:
             robot_name = "BimanualRobotMean"
         multi_robots.__init__(self, robots, robot_name=robot_name, **kwargs)
-        self.TBase[1] = self.robots[0].TBase
 
     def GetState(self) -> None:
         """
@@ -3884,3 +3908,55 @@ class bimanual_robot_mean(multi_robots):
         None
         """
         self.WarningMessage("TCP can not be set!")
+
+    def BaseToWorld(self, x: np.ndarray, typ: str = None, robot_num: int = None) -> np.ndarray:
+        """
+        Map from robot base frame to world frame.
+
+        Not supported for this bimanual robot configuration!
+
+        Returns
+        -------
+        np.ndarray
+            Unchanged input argument.
+        """
+        return x
+
+    def WorldToBase(self, x: np.ndarray, typ: str = None, robot_num: int = None) -> np.ndarray:
+        """
+        Map from world frame to robot base frame.
+
+        Not supported for this bimanual robot configuration!
+
+        Returns
+        -------
+        np.ndarray
+            Unchanged input argument.
+        """
+        return x
+
+    def ObjectToWorld(self, x: np.ndarray, typ: str = None, robot_num: int = None) -> np.ndarray:
+        """
+        Map from object frame to world frame.
+
+        Not supported for this bimanual robot configuration!
+
+        Returns
+        -------
+        np.ndarray
+            Unchanged input argument.
+        """
+        return x
+
+    def WorldToObject(self, x: np.ndarray, typ: str = None, robot_num: int = None) -> np.ndarray:
+        """
+        Map from world frame to object frame.
+
+        Not supported for this bimanual robot configuration!
+
+        Returns
+        -------
+        np.ndarray
+            Unchanged input argument.
+        """
+        return x

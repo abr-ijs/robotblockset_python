@@ -924,6 +924,8 @@ def timeopttraj(path_kin: path_kinematics, path_con: path_constraints, s0: float
         path_kin.calc(s)
         sdd_b = accbounds(sd, path_kin, path_con)
         sdd = sdd_b[1]
+        if np.isinf(sdd):
+            break
         # save backward path
         spb = np.insert(spb, 0, s)
         svb = np.insert(svb, 0, sd)
@@ -959,30 +961,31 @@ def timeopttraj(path_kin: path_kinematics, path_con: path_constraints, s0: float
                     s_j = s_i
                     cross_forward = True
 
-    # cut wrong forward path
-    if s_j + 1 < sp.shape[0]:
-        sp = sp[: s_j + 1]
-        sv = sv[: s_j + 1]
-        sa = sa[: s_j + 1]
-        ts = ts[: s_j + 1]
+    if not np.isinf(sdd):
+        # cut wrong forward path
+        if s_j + 1 < sp.shape[0]:
+            sp = sp[: s_j + 1]
+            sv = sv[: s_j + 1]
+            sa = sa[: s_j + 1]
+            ts = ts[: s_j + 1]
 
-    path_kin.calc(s3)
-    sd_b = velbounds(path_kin, path_con)
-    sdb = min(sd_b)
-    sp[-1] = s3
-    sv[-1] = min(sd3, sdb)
+        path_kin.calc(s3)
+        sd_b = velbounds(path_kin, path_con)
+        sdb = min(sd_b)
+        sp[-1] = s3
+        sv[-1] = min(sd3, sdb)
 
-    # smooth break
-    ts[-2] = (sp[-1] - sp[-2]) / sv[-2]
-    sa[-2] = (sv[-1] - sv[-2]) / ts[-2]
-    ts[-1] = (spb[0] - sp[-1]) / sv[-1]
-    sa[-1] = (svb[0] - sv[-1]) / ts[-1]
+        # smooth break
+        ts[-2] = (sp[-1] - sp[-2]) / sv[-2]
+        sa[-2] = (sv[-1] - sv[-2]) / ts[-2]
+        ts[-1] = (spb[0] - sp[-1]) / sv[-1]
+        sa[-1] = (svb[0] - sv[-1]) / ts[-1]
 
-    # add backward path
-    sp = np.concatenate((sp, spb))
-    sv = np.concatenate((sv, svb))
-    sa = np.concatenate((sa, sab))
-    ts = np.concatenate((ts, tsb))
+        # add backward path
+        sp = np.concatenate((sp, spb))
+        sv = np.concatenate((sv, svb))
+        sa = np.concatenate((sa, sab))
+        ts = np.concatenate((ts, tsb))
 
     # time
     # t = np.array([0] + list(np.cumsum(ts[:-1])))

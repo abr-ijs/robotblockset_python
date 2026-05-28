@@ -38,7 +38,7 @@
     <default class="panda_tool_main">
       <light castshadow="true"/>
       <general biastype="none" biasprm="0 0"/>
-      <default class="panda_tool_panda_hand">
+      <default class="panda_tool_hand">
         <material shininess="0.25"/>
         <joint range="-2.8973 2.8973" armature="0.1" damping="1"/>
         <general ctrlrange="-2.8973 2.8973" forcerange="-87 87" biastype="affine"/>
@@ -98,9 +98,9 @@
     <material name="panda_dark_grey" class="panda_robot" rgba="0.25 0.25 0.25 1"/>
     <material name="panda_green" class="panda_robot" rgba="0 1 0 1"/>
     <material name="panda_light_blue" class="panda_robot" rgba="0.039216 0.541176 0.780392 1"/>
-    <material name="panda_tool_panda_hand_white" class="panda_tool_panda_hand"/>
-    <material name="panda_tool_panda_hand_off_white" class="panda_tool_panda_hand" rgba="0.901961 0.921569 0.929412 1"/>
-    <material name="panda_tool_panda_hand_black" class="panda_tool_panda_hand" rgba="0.25 0.25 0.25 1"/>
+    <material name="panda_tool_hand_white" class="panda_tool_hand"/>
+    <material name="panda_tool_hand_off_white" class="panda_tool_hand" rgba="0.901961 0.921569 0.929412 1"/>
+    <material name="panda_tool_hand_black" class="panda_tool_hand" rgba="0.25 0.25 0.25 1"/>
     <material name="plate_charuco_mat" texture="plate_charuco_tex"/>
     <material name="plate_checker_mat" texture="plate_checker_tex"/>
     <material name="cam_Black_Acrylic" class="cam_cam" rgba="0.07036 0.07036 0.07036 1"/>
@@ -189,7 +189,7 @@
   </asset>
 
   <worldbody>
-    <geom name="ground" size="0 0 1" type="plane" condim="1" material="matplane"/>
+    <geom name="ground" size="0 0 1" type="plane" friction="2 0.05 0.01" material="matplane"/>
     <site pos="0.5 0 0" quat="0.707107 0 0.707107 0" size="0.005 0.5" type="cylinder" rgba="1 0 0 1"/>
     <site pos="0 0.5 0" quat="0.707107 0.707107 0 0" size="0.005 0.5" type="cylinder" rgba="0 1 0 1"/>
     <site pos="0 0 0.5" size="0.005 0.5" type="cylinder" rgba="0 0 1 1"/>
@@ -292,13 +292,13 @@
                         <site pos="0 0.125 0" quat="0.707107 0.707107 0 0" size="0.005 0.125" group="3" type="cylinder" rgba="0 1 0 1"/>
                         <site pos="0 0 0.125" size="0.005 0.125" group="3" type="cylinder" rgba="0 0 1 1"/>
                         <site name="panda_flange" pos="0 0 0"/>
-                        <body name="panda_tool_hand" childclass="panda_tool_panda_hand" quat="0.92388 0 0 -0.382683">
+                        <body name="panda_tool_hand" childclass="panda_tool_hand" quat="0.92388 0 0 -0.382683">
                           <inertial pos="-0.01 0 0.03" mass="0.73" diaginertia="0.001 0.0025 0.0017"/>
-                          <geom class="panda_tool_visual" material="panda_tool_panda_hand_off_white" mesh="panda_tool_hand_0"/>
-                          <geom class="panda_tool_visual" material="panda_tool_panda_hand_black" mesh="panda_tool_hand_1"/>
-                          <geom class="panda_tool_visual" material="panda_tool_panda_hand_black" mesh="panda_tool_hand_2"/>
-                          <geom class="panda_tool_visual" material="panda_tool_panda_hand_white" mesh="panda_tool_hand_3"/>
-                          <geom class="panda_tool_visual" material="panda_tool_panda_hand_off_white" mesh="panda_tool_hand_4"/>
+                          <geom class="panda_tool_visual" material="panda_tool_hand_off_white" mesh="panda_tool_hand_0"/>
+                          <geom class="panda_tool_visual" material="panda_tool_hand_black" mesh="panda_tool_hand_1"/>
+                          <geom class="panda_tool_visual" material="panda_tool_hand_black" mesh="panda_tool_hand_2"/>
+                          <geom class="panda_tool_visual" material="panda_tool_hand_white" mesh="panda_tool_hand_3"/>
+                          <geom class="panda_tool_visual" material="panda_tool_hand_off_white" mesh="panda_tool_hand_4"/>
                           <geom class="panda_tool_collision" mesh="panda_tool_hand_c"/>
                           <site pos="0.0625 0 0.1034" quat="0.707107 0 0.707107 0" size="0.005 0.0625" group="4" type="cylinder" rgba="1 0 0 1"/>
                           <site pos="0 0.0625 0.1034" quat="0.707107 0.707107 0 0" size="0.005 0.0625" group="4" type="cylinder" rgba="0 1 0 1"/>
@@ -307,8 +307,8 @@
                           <body name="panda_tool_left_finger" pos="0 0 0.0584">
                             <inertial pos="0 0 0" mass="0.015" diaginertia="2.375e-06 2.375e-06 7.5e-07"/>
                             <joint name="panda_tool_finger_joint1" class="panda_tool_finger" pos="0 0 0" axis="0 1 0"/>
-                            <geom class="panda_tool_visual" material="panda_tool_panda_hand_off_white" mesh="panda_tool_finger_0"/>
-                            <geom class="panda_tool_visual" material="panda_tool_panda_hand_black" mesh="panda_tool_finger_1"/>
+                            <geom class="panda_tool_visual" material="panda_tool_hand_off_white" mesh="panda_tool_finger_0"/>
+                            <geom class="panda_tool_visual" material="panda_tool_hand_black" mesh="panda_tool_finger_1"/>
                             <geom class="panda_tool_collision" mesh="panda_tool_finger_0"/>
                             <geom class="panda_tool_fingertip_pad_collision_1" pos="0 0.0055 0.0445"/>
                             <geom class="panda_tool_fingertip_pad_collision_2" pos="0.0055 0.002 0.05"/>
@@ -319,8 +319,8 @@
                           <body name="panda_tool_right_finger" pos="0 0 0.0584" quat="0 0 0 1">
                             <inertial pos="0 0 0" mass="0.015" diaginertia="2.375e-06 2.375e-06 7.5e-07"/>
                             <joint name="panda_tool_finger_joint2" class="panda_tool_finger" pos="0 0 0" axis="0 1 0"/>
-                            <geom class="panda_tool_visual" material="panda_tool_panda_hand_off_white" mesh="panda_tool_finger_0"/>
-                            <geom class="panda_tool_visual" material="panda_tool_panda_hand_black" mesh="panda_tool_finger_1"/>
+                            <geom class="panda_tool_visual" material="panda_tool_hand_off_white" mesh="panda_tool_finger_0"/>
+                            <geom class="panda_tool_visual" material="panda_tool_hand_black" mesh="panda_tool_finger_1"/>
                             <geom class="panda_tool_collision" mesh="panda_tool_finger_0"/>
                             <geom class="panda_tool_fingertip_pad_collision_1" pos="0 0.0055 0.0445"/>
                             <geom class="panda_tool_fingertip_pad_collision_2" pos="0.0055 0.002 0.05"/>
@@ -390,7 +390,7 @@
     <general name="panda_actuator5" class="panda_robot" joint="panda_joint5" forcerange="-12 12" gainprm="2000" biasprm="0 -2000 -200"/>
     <general name="panda_actuator6" class="panda_robot" joint="panda_joint6" ctrlrange="-0.0175 3.7525" forcerange="-12 12" gainprm="2000" biasprm="0 -2000 -200"/>
     <general name="panda_actuator7" class="panda_robot" joint="panda_joint7" forcerange="-12 12" gainprm="2000" biasprm="0 -2000 -200"/>
-    <general name="panda_tool_panda_hand" class="panda_tool_panda_hand" tendon="panda_tool_split" ctrlrange="0 255" forcerange="-100 100" gainprm="0.0156863" biasprm="0 -100 -10"/>
+    <general name="panda_tool_gripper" class="panda_tool_hand" tendon="panda_tool_split" ctrlrange="0 255" forcerange="-100 100" gainprm="0.0156863" biasprm="0 -100 -10"/>
   </actuator>
 
   <sensor>

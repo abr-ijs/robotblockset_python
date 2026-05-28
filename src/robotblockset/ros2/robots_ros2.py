@@ -780,10 +780,14 @@ class robot_ros2(robot):
             return self.controller.GetCartesianStiffness()
         raise NotImplementedError("Cartesian stiffness not implemented for the current controller")
 
-    def SetCartesianStiffness(self, Kp: Optional[Any] = None, Kr: Optional[Any] = None, hold_pose: bool = True) -> int:
-        """Update Cartesian stiffness through the active controller."""
+    def SetCartesianStiffness(self, stiffness: Any, hold_pose: bool = True, **kwargs: Any) -> int:
+        """Update Cartesian stiffness through the active controller.
+
+        Additional keyword arguments are forwarded to the controller
+        (for example ``R`` and ``D`` for Cartesian impedance controllers).
+        """
         if hasattr(self.controller, "SetCartesianStiffness"):
-            return self.controller.SetCartesianStiffness(Kp=Kp, Kr=Kr, hold_pose=hold_pose)
+            return self.controller.SetCartesianStiffness(stiffness=stiffness, hold_pose=hold_pose, **kwargs)
         raise NotImplementedError("Cartesian stiffness not implemented for the current controller")
 
     def GetCartesianDamping(self) -> Any:

@@ -138,8 +138,7 @@
   <link name="panda_link6">
     <visual>
       <geometry>
-        <mesh filename="package://panda/meshes/collision/x_link6.obj"/>
-        <!--mesh filename="package://panda/meshes/visual/link6.dae"/-->
+        <mesh filename="package://panda/meshes/visual/link6.dae"/>
       </geometry>
       <material name="panda_white"/>
     </visual>

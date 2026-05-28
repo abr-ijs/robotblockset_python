@@ -318,6 +318,7 @@ def plotcpos_ori(
     alpha: float = 0.1,
     ori_sel: List[int] = [1, 2],
     fig_num: Union[str, int] = "Cartesian poses",
+    fig_size: ArrayLike = (9, 6),
     ax: Optional[plt.Axes] = None,
 ) -> Tuple[List[Any], plt.Axes]:
     """Plot positions or orientations of Cartesian trajecotry
@@ -358,6 +359,8 @@ def plotcpos_ori(
         Selection of two quaternions rotations for 3D plot (1, 2 or 3), by default [1, 2]
     fig_num : str, optional
         Figure identifier, by default 1
+    fig_size : ArrayLike, optional
+        Figure size, by default (9, 6)
     ax : plt.Axes, optional
         Axes to be used for plot, by default None
 
@@ -377,7 +380,7 @@ def plotcpos_ori(
     x = map_pose(x=x, T=T, p=p, R=R, Q=Q, out="x")
 
     if ax is None:
-        fig = plt.figure(num=fig_num)
+        fig = plt.figure(num=fig_num, figsize=fig_size)
         fig.clear()
         if np.char.upper(graph) == "3D":
             ax = fig.add_subplot(projection="3d")
@@ -449,7 +452,7 @@ def plotcpos_ori(
     return hx, ax
 
 
-def plotcpath(s: ArrayLike, path: Poses3DType, points: Optional[Poses3DType] = None, auxpoints: Optional[Poses3DType] = None, grid: bool = True, UCS: bool = True, label: bool = True, ori_sel: List[int] = [0, 1], normscale: float = 1, fig_num: Union[str, int] = "Cartesian path", **kwargs) -> Tuple[List[Any], List[plt.Axes]]:
+def plotcpath(s: ArrayLike, path: Poses3DType, points: Optional[Poses3DType] = None, auxpoints: Optional[Poses3DType] = None, grid: bool = True, UCS: bool = True, label: bool = True, ori_sel: List[int] = [0, 1], normscale: float = 1, fig_num: Union[str, int] = "Cartesian path", fig_size: ArrayLike = (9, 6), **kwargs) -> Tuple[List[Any], List[plt.Axes]]:
     """
     Plot positions, orientations, velocities, and accelerations for a Cartesian path vs path parameter.
 
@@ -480,6 +483,8 @@ def plotcpath(s: ArrayLike, path: Poses3DType, points: Optional[Poses3DType] = N
         Scale factor for normalizing the path, by default 1.
     fig_num : str, optional
         Figure identifier, by default "Cartesian path".
+    fig_size : ArrayLike, optional
+        Figure size, by default (9, 6)
     ax : plt.Axes, optional
         Axes to be used for plot, by default None.
 
@@ -497,7 +502,7 @@ def plotcpath(s: ArrayLike, path: Poses3DType, points: Optional[Poses3DType] = N
 
     hx = []
     # 3D positions
-    fig_rgt = plt.figure(num=fig_num, figsize=(9, 6))
+    fig_rgt = plt.figure(num=fig_num, figsize=fig_size)
     ax3d = fig_rgt.add_subplot(position=[0.0, 0.5, 0.38, 0.45], projection="3d")
     # ax3d.set_position([0.0, 0.5, 0.45, 0.45])
     if points is not None:
@@ -625,7 +630,7 @@ def plotcpath(s: ArrayLike, path: Poses3DType, points: Optional[Poses3DType] = N
     return hx, ax
 
 
-def plotctraj(t: TimesType, xt: Poses3DType, *args: ArrayLike, grid: bool = True, fig_num: Union[str, int] = "Cartesian trajectory", ax: Optional[np.ndarray] = None, **kwargs) -> Tuple[List[Any], np.ndarray]:
+def plotctraj(t: TimesType, xt: Poses3DType, *args: ArrayLike, grid: bool = True, fig_num: Union[str, int] = "Cartesian trajectory", fig_size: ArrayLike = (9, 6), ax: Optional[np.ndarray] = None, **kwargs) -> Tuple[List[Any], np.ndarray]:
     """
     Plot positions, orientations, velocities, and accelerations for Cartesian trajectory.
 
@@ -645,6 +650,8 @@ def plotctraj(t: TimesType, xt: Poses3DType, *args: ArrayLike, grid: bool = True
         Grid flag, by default True.
     fig_num : str, optional
         Figure identifier, by default "Cartesian trajectory".
+    fig_size : ArrayLike, optional
+        Figure size, by default (9, 6)
     ax : np.ndarray, optional
         List of axes to be used for plot (3, 2), by default None.
     **kwargs : optional
@@ -672,7 +679,7 @@ def plotctraj(t: TimesType, xt: Poses3DType, *args: ArrayLike, grid: bool = True
     hx = []
     if nd == 7:
         if ax is None:
-            fig = plt.figure(num=fig_num)
+            fig = plt.figure(num=fig_num, figsize=fig_size)
             fig.clear()
             ax = fig.subplots(3, 2)
         else:
@@ -732,10 +739,11 @@ def plotctraj(t: TimesType, xt: Poses3DType, *args: ArrayLike, grid: bool = True
         ax[2].set_xlabel("$t$")
         ax[2].set_ylabel("$\\ddot p$")
 
+    plt.tight_layout()
     return hx, ax
 
 
-def plotpathpoints(x: Optional[Poses3DType] = None, T: Optional[HomogeneousMatricesType] = None, p: Optional[ArrayLike] = None, label: bool = False, fig_num: Union[str, int] = "Path", ax: Optional[plt.Axes] = None, **kwargs) -> Tuple[List[Any], plt.Axes]:
+def plotpathpoints(x: Optional[Poses3DType] = None, T: Optional[HomogeneousMatricesType] = None, p: Optional[ArrayLike] = None, label: bool = False, fig_num: Union[str, int] = "Path", fig_size: ArrayLike = (9, 6), ax: Optional[plt.Axes] = None, **kwargs) -> Tuple[List[Any], plt.Axes]:
     """
     Plot the path points of a Cartesian trajectory.
 
@@ -754,6 +762,8 @@ def plotpathpoints(x: Optional[Poses3DType] = None, T: Optional[HomogeneousMatri
         Label points, by default False.
     fig_num : str, optional
         Figure identifier, by default "Path".
+    fig_size : ArrayLike, optional
+        Figure size, by default (9, 6)
     ax : plt.Axes, optional
         Axes to be used for plot, by default None.
 
@@ -768,7 +778,7 @@ def plotpathpoints(x: Optional[Poses3DType] = None, T: Optional[HomogeneousMatri
         if plt.get_fignums():
             ax = plt.gca()
         else:
-            fig = plt.figure()
+            fig = plt.figure(figsize=fig_size)
             fig.clear()
             ax = fig.add_subplot(projection="3d")
     if ax.name != "3d":
@@ -792,7 +802,7 @@ def plotpathpoints(x: Optional[Poses3DType] = None, T: Optional[HomogeneousMatri
     return hx, ax
 
 
-def plotwrench(t: TimesType, FTt: WrenchType, grid: bool = True, ax: Optional[np.ndarray] = None, fig_num: Union[str, int] = "Task forces", **kwargs) -> Tuple[List[Any], np.ndarray]:
+def plotwrench(t: TimesType, FTt: WrenchType, grid: bool = True, ax: Optional[np.ndarray] = None, fig_num: Union[str, int] = "Task forces", fig_size: ArrayLike = (9, 6), **kwargs) -> Tuple[List[Any], np.ndarray]:
     """
     Plot force and torque signals over time.
 
@@ -809,6 +819,8 @@ def plotwrench(t: TimesType, FTt: WrenchType, grid: bool = True, ax: Optional[np
         Grid flag, by default True.
     fig_num : str, optional
         Figure identifier, by default "Task forces".
+    fig_size : ArrayLike, optional
+        Figure size, by default (9, 6)
     ax : np.ndarray, optional
         List of axes to be used for plot, by default None.
     **kwargs : optional
@@ -826,7 +838,7 @@ def plotwrench(t: TimesType, FTt: WrenchType, grid: bool = True, ax: Optional[np
 
     hx = []
     if ax is None:
-        fig = plt.figure(num=fig_num)
+        fig = plt.figure(num=fig_num, figsize=fig_size)
         fig.clear()
         ax = fig.subplots(2, 1)
     else:
@@ -846,7 +858,7 @@ def plotwrench(t: TimesType, FTt: WrenchType, grid: bool = True, ax: Optional[np
     return hx, ax
 
 
-def plotjtraj(t: TimesType, qt: JointPathType, *args: ArrayLike, grid: bool = True, ax: Optional[np.ndarray] = None, fig_num: Union[str, int] = "Joint trajectory", **kwargs) -> Tuple[List[Any], np.ndarray]:
+def plotjtraj(t: TimesType, qt: JointPathType, *args: ArrayLike, grid: bool = True, ax: Optional[np.ndarray] = None, fig_num: Union[str, int] = "Joint trajectory", fig_size: ArrayLike = (9, 6), **kwargs) -> Tuple[List[Any], np.ndarray]:
     """
     Plot positions, velocities, and accelerations for joint trajectory.
 
@@ -865,6 +877,8 @@ def plotjtraj(t: TimesType, qt: JointPathType, *args: ArrayLike, grid: bool = Tr
         Grid flag, by default True.
     fig_num : str, optional
         Figure identifier, by default "Joint trajectory".
+    fig_size : ArrayLike, optional
+        Figure size, by default (9, 6)
     ax : np.ndarray, optional
         List of axes to be used for plot (3,), by default None.
     **kwargs : optional
@@ -890,7 +904,7 @@ def plotjtraj(t: TimesType, qt: JointPathType, *args: ArrayLike, grid: bool = Tr
 
     hx = []
     if ax is None:
-        fig = plt.figure(num=fig_num)
+        fig = plt.figure(num=fig_num, figsize=fig_size)
         ax = fig.subplots(3, 1)
     else:
         if ax.shape != (3,):
@@ -911,10 +925,11 @@ def plotjtraj(t: TimesType, qt: JointPathType, *args: ArrayLike, grid: bool = Tr
     ax[2].set_xlabel("$t$")
     ax[2].set_ylabel("$\\ddot q$")
 
+    plt.tight_layout()
     return hx, ax
 
 
-def plotjctraj(t: TimesType, qt: JointPathType, xt: Poses3DType, *args: ArrayLike, grid: bool = True, ax: Optional[np.ndarray] = None, fig_num: Union[str, int] = "Joint and task trajectory", **kwargs) -> Tuple[List[Any], np.ndarray]:
+def plotjctraj(t: TimesType, qt: JointPathType, xt: Poses3DType, *args: ArrayLike, grid: bool = True, ax: Optional[np.ndarray] = None, fig_num: Union[str, int] = "Joint and task trajectory", fig_size: ArrayLike = (12, 4), **kwargs) -> Tuple[List[Any], np.ndarray]:
     """
     Plot positions, orientations, and velocities for joint and task trajectory.
 
@@ -935,6 +950,8 @@ def plotjctraj(t: TimesType, qt: JointPathType, xt: Poses3DType, *args: ArrayLik
         Grid flag, by default True.
     fig_num : str, optional
         Figure identifier, by default "Joint and task trajectory".
+    fig_size : ArrayLike, optional
+        Figure size, by default (12, 4)
     ax : np.ndarray, optional
         List of axes to be used for plot (3,), by default None.
     **kwargs : optional
@@ -961,7 +978,7 @@ def plotjctraj(t: TimesType, qt: JointPathType, xt: Poses3DType, *args: ArrayLik
 
     hx = []
     if ax is None:
-        fig = plt.figure(num=fig_num, figsize=(12, 4))
+        fig = plt.figure(num=fig_num, figsize=fig_size)
         ax = fig.subplots(2, 3)
     else:
         if ax.shape != (2, 3):
@@ -997,6 +1014,7 @@ def plotjctraj(t: TimesType, qt: JointPathType, xt: Poses3DType, *args: ArrayLik
     ax[1, 2].set_xlabel("$t$")
     ax[1, 2].set_ylabel("$\\omega$")
 
+    plt.tight_layout()
     return hx, ax
 
 

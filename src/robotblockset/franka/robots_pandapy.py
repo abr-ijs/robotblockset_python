@@ -843,6 +843,8 @@ class panda(panda_spec, fr3_spec, robot):
 
         if use_internal:
             _x = spatial2x(x)
+            if task_space is None:
+                task_space = self._default.TaskSpace
             if check_option(task_space, "Tool"):
                 task_space = "Robot"
                 T0 = self.GetPose(out="T", task_space="Robot", kinematics=kwargs["kinematics"], state="Commanded")
@@ -1036,6 +1038,8 @@ class panda(panda_spec, fr3_spec, robot):
             If the specified strategy is not supported.
         """
         if new_strategy in self._strategy_controller_mapping:
+            if new_strategy != self._control_strategy and not self._control_strategy.startswith("Joint"):
+                self.ResetCurrentTarget()
             self.ctrl = self._strategy_controller_mapping[new_strategy]
             self._control_strategy = new_strategy
             # self.panda.stop_controller()
@@ -1449,10 +1453,10 @@ class panda(panda_spec, fr3_spec, robot):
         -----
         The transformation matrix is sent as a vectorized 4x4 matrix in column-major format.
         """
-        if any(NE_T_EE[:3, 3] > 0.5):
+        _frame = spatial2t(NE_T_EE)
+        if any(_frame > 0.5):
             self.WarningMessage("Setting EE frame with translation larger than 0.5m not possible")
         else:
-            _frame = spatial2t(NE_T_EE)
             self.panda.stop_controller()
             self.robot.set_ee(_frame.flatten(order="F"))
             self.panda.start_controller(self.ctrl)

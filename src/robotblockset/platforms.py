@@ -278,7 +278,7 @@ class _default:
         self.TaskVelForm: str = "Twist"  # Default velocity form
         self.TaskFTForm: str = "Wrench"  # Default force/torque form
         self.Refresh: bool = True  # Whether to refresh the robot's state or not
-        self.Traj: str = "poly"  # Default trajectory type
+        self.Traj: str = "Poly"  # Default trajectory type
         self.VelFac: float = 0.25  # Default velocity scaling factor
         self.PosErr: float = 0.01  # Default position error tolerance
         self.OriErr: float = 0.01  # Default orientation error tolerance

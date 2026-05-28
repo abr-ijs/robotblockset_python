@@ -504,6 +504,7 @@ def gen_kinmodel_dh_all(number_of_joints: int, filename: Optional[str] = None) -
         f.write('"""\n')
         f.write("import numpy as np \n")
         f.write("from robotblockset.transformations import map_pose \n")
+        f.write("from robotblockset.rbs_typing import TCPType \n")
         f.write("\n")
     else:
         f = open(filename, "a")
@@ -684,6 +685,7 @@ def gen_kinmodel_dh(robot: Dict[str, Any], filename: Optional[str] = None) -> No
         f.write('"""\n')
         f.write("import numpy as np \n")
         f.write("from robotblockset.transformations import map_pose \n")
+        f.write("from robotblockset.rbs_typing import TCPType \n")
         f.write("\n")
         f.write("pi = np.pi\n")
         f.write("\n")
@@ -1211,6 +1213,8 @@ def gen_kinmodel_urdf(robot_name: str, urdf_path: str, description: Optional[str
         f.write('"""\n')
         f.write("import numpy as np \n")
         f.write("from robotblockset.transformations import map_pose \n")
+        f.write("from robotblockset.rbs_typing import TCPType \n")
+        f.write("\n")
     else:
         f = open(filename, "a")
 
@@ -1611,6 +1615,8 @@ def gen_kinmodel_mjcf(robot_name: str, xml_path: str, description: Optional[str]
         f.write('"""\n')
         f.write("import numpy as np \n")
         f.write("from robotblockset.transformations import map_pose \n")
+        f.write("from robotblockset.rbs_typing import TCPType \n")
+        f.write("\n")
     else:
         f = open(filename, "a")
 

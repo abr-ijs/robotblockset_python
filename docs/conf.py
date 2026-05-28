@@ -16,7 +16,7 @@ sys.path.insert(0, str(SRC_ROOT))
 
 project = "robotblockset"
 author = "Leon Zlajpah"
-release = "1.1.0"
+release = "1.2.0"
 
 extensions = [
     "myst_parser",

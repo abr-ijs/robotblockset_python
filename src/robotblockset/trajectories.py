@@ -27,6 +27,9 @@ from typing import Optional, Tuple, Union
 import numpy as np
 import scipy.interpolate as spi
 
+from copy import copy
+from ruckig import InputParameter, OutputParameter, Result, Trajectory, Ruckig
+
 try:
     import matplotlib.pyplot as plt
     from robotblockset.graphics import plotcpath
@@ -37,8 +40,26 @@ except Exception:
 from robotblockset.tools import check_option, gradientCartesianPath, gradientPath, ismatrix, ismatrixarray, isscalar, isvector, normalize, vector
 from robotblockset.transformations import ang4v, prpy2x, qerr, qexp, qinv, qlog, qmtimes, q2r, r2q, rbs_type, t2x, uniqueCartesianPath, x2t, xerr, xnormalize, rot_v, qnormalize
 from robotblockset.rbf import encodeRBF, decodeRBF, decodeCartesianRBF
-from robotblockset.rbs_typing import Accelerations3DType, ArrayLike, HomogeneousMatricesType, HomogeneousMatrixType, JointConfigurationType, JointPathType, Pose3DType, Poses3DType, QuaternionType, QuaternionsType, RotationMatricesType, RotationMatrixType, TimesType, Velocities3DType, Vector3DType, Vector3DArrayType
-
+from robotblockset.rbs_typing import (
+    Velocity3DType,
+    Acceleration3DType,
+    Accelerations3DType,
+    ArrayLike,
+    HomogeneousMatricesType,
+    HomogeneousMatrixType,
+    JointConfigurationType,
+    JointPathType,
+    Pose3DType,
+    Poses3DType,
+    QuaternionType,
+    QuaternionsType,
+    RotationMatricesType,
+    RotationMatrixType,
+    TimesType,
+    Velocities3DType,
+    Vector3DType,
+    Vector3DArrayType,
+)
 
 _eps = 100 * np.finfo(np.float64).eps
 
@@ -113,7 +134,7 @@ def arc(p0: Vector3DType, p1: Vector3DType, pC: Vector3DType, s: float, short: b
         raise ValueError("Points must be distinct and not on the same line")
 
 
-def carctraj(x0: Pose3DType, x1: Pose3DType, pC: Vector3DType, t: TimesType, traj: str = "poly", short: bool = True) -> Tuple[Poses3DType, Velocities3DType, Accelerations3DType]:
+def carctraj(x0: Pose3DType, x1: Pose3DType, pC: Vector3DType, t: TimesType, traj: str = "Poly", short: bool = True) -> Tuple[Poses3DType, Velocities3DType, Accelerations3DType]:
     """
     Generates a Cartesian trajectory on an arc from `x0` to `x1`, with the arc defined by the initial and final poses and an arc center.
 
@@ -131,7 +152,7 @@ def carctraj(x0: Pose3DType, x1: Pose3DType, pC: Vector3DType, t: TimesType, tra
     t : TimesType
         Time array (nsamp,)
     traj : str, optional
-        Trajectory type: `"poly"` for polynomial, `"trap"` for trapezoidal, or `"line"` for linear interpolation. Default is `"poly"`.
+        Trajectory type: `"Poly"` for polynomial, `"Trap"` for trapezoidal, or `"Line"` for linear interpolation. Default is `"Poly"`.
     short : bool, optional
         If `True`, the shortest rotation path is used. Default is `True`.
 
@@ -173,7 +194,7 @@ def carctraj(x0: Pose3DType, x1: Pose3DType, pC: Vector3DType, t: TimesType, tra
     return xt, xdt, xddt
 
 
-def jline(q0: JointConfigurationType, q1: JointConfigurationType, t: TimesType) -> Tuple[JointPathType, JointPathType, JointPathType]:
+def jline(q0: JointConfigurationType, q1: JointConfigurationType, t: TimesType, **kwargs) -> Tuple[JointPathType, JointPathType, JointPathType]:
     """
     Generates a trajectory from joint position `q0` to `q1` with constant velocity.
 
@@ -188,7 +209,7 @@ def jline(q0: JointConfigurationType, q1: JointConfigurationType, t: TimesType) 
     q1 : JointConfigurationType
         Final joint positions (n,), where `n` is the number of joints.
     t : TimesType
-        Trajectory time (nsamp,), where `nsamp` is the number of time samples.
+        Time array (nsamp,) for the trajectory evaluation.
 
     Returns
     -------
@@ -209,7 +230,8 @@ def jline(q0: JointConfigurationType, q1: JointConfigurationType, t: TimesType) 
     """
     # Convert input arguments to appropriate format
     q0 = vector(q0)
-    q1 = vector(q1)
+    m = q0.shape[0]
+    q1 = vector(q1, dim=m)
     t = vector(t)
 
     # Check that the sizes of the initial and final positions match
@@ -240,7 +262,7 @@ def jline(q0: JointConfigurationType, q1: JointConfigurationType, t: TimesType) 
         raise TypeError("Input vectors must be of the same size")
 
 
-def jtrap(q0: JointConfigurationType, q1: JointConfigurationType, t: TimesType, ta: float = 0.1) -> Tuple[JointPathType, JointPathType, JointPathType]:
+def jtrap(q0: JointConfigurationType, q1: JointConfigurationType, t: TimesType, ta: float = 0.1, **kwargs) -> Tuple[JointPathType, JointPathType, JointPathType]:
     """
     Generates a trajectory from `q0` to `q1` using trapezoidal velocity profile.
 
@@ -256,7 +278,7 @@ def jtrap(q0: JointConfigurationType, q1: JointConfigurationType, t: TimesType, 
     q1 : JointConfigurationType
         Final joint positions (n,). The number of elements corresponds to the number of joints.
     t : TimesType
-        is evaluated.
+        Time array (nsamp,) for the trajectory evaluation.
     ta : float, optional
         Acceleration/deceleration time (default is 0.1). This parameter controls the duration
         of the acceleration and deceleration phases.
@@ -280,7 +302,8 @@ def jtrap(q0: JointConfigurationType, q1: JointConfigurationType, t: TimesType, 
     """
     # Convert inputs to proper vector format
     q0 = vector(q0)
-    q1 = vector(q1)
+    m = q0.shape[0]
+    q1 = vector(q1, dim=m)
     t = vector(t)
 
     ta = min(ta, t[-1] / 2)  # Ensure ta is not greater than half the total time
@@ -324,7 +347,14 @@ def jtrap(q0: JointConfigurationType, q1: JointConfigurationType, t: TimesType, 
         raise TypeError("Input vectors must be the same size")
 
 
-def jpoly(q0: JointConfigurationType, q1: JointConfigurationType, t: TimesType, qd0: Optional[JointConfigurationType] = None, qd1: Optional[JointConfigurationType] = None) -> Tuple[JointPathType, JointPathType, JointPathType]:
+def jpoly(
+    q0: JointConfigurationType,
+    q1: JointConfigurationType,
+    t: TimesType,
+    qd0: Optional[JointConfigurationType] = None,
+    qd1: Optional[JointConfigurationType] = None,
+    **kwargs,
+) -> Tuple[JointPathType, JointPathType, JointPathType]:
     """
     Generates a trajectory from `q0` to `q1` using a 5th order polynomial.
 
@@ -340,7 +370,7 @@ def jpoly(q0: JointConfigurationType, q1: JointConfigurationType, t: TimesType, 
     q1 : JointConfigurationType
         Final joint positions (n,). The number of elements corresponds to the number of joints.
     t : TimesType
-        is evaluated.
+        Time array (nsamp,) for the trajectory evaluation.
     qd0 : JointConfigurationType, optional
         Initial joint velocities (n,). Defaults to zero if not provided.
     qd1 : JointConfigurationType, optional
@@ -364,16 +394,17 @@ def jpoly(q0: JointConfigurationType, q1: JointConfigurationType, t: TimesType, 
         If the trajectory time values are non-positive or incorrect.
     """
     q0 = vector(q0)
-    q1 = vector(q1)
+    m = q0.shape[0]
+    q1 = vector(q1, dim=m)
     t = vector(t)
     if qd0 is None:
         qd0 = np.zeros(q0.shape)
     else:
-        qd0 = vector(qd0)
+        qd0 = vector(qd0, dim=m)
     if qd1 is None:
         qd1 = np.zeros(q0.shape)
     else:
-        qd1 = vector(qd1)
+        qd1 = vector(qd1, dim=m)
     if q0.size == q1.size and qd0.size == q0.size and qd1.size == q1.size:
         tmax = max(t)
         if tmax <= 0:
@@ -401,7 +432,161 @@ def jpoly(q0: JointConfigurationType, q1: JointConfigurationType, t: TimesType, 
         raise TypeError("Input vecotrs must be same size")
 
 
-def jtraj(q0: JointConfigurationType, q1: JointConfigurationType, t: TimesType, traj: str = "poly", qd0: Optional[JointConfigurationType] = None, qd1: Optional[JointConfigurationType] = None, **kwargs) -> Tuple[JointPathType, JointPathType, JointPathType]:
+def jjerk(
+    q0: JointConfigurationType,
+    q1: JointConfigurationType,
+    t: TimesType,
+    qd0: Optional[JointConfigurationType] = None,
+    qd1: Optional[JointConfigurationType] = None,
+    qd_max: Optional[JointConfigurationType] = None,
+    qd_min: Optional[JointConfigurationType] = None,
+    qdd_max: Optional[JointConfigurationType] = None,
+    qdd_min: Optional[JointConfigurationType] = None,
+    jerk_max: Optional[JointConfigurationType] = None,
+    resample: bool = True,
+    **kwargs,
+) -> Tuple[JointPathType, JointPathType, JointPathType]:
+    """
+    Generates a trajectory from `q0` to `q1` using a limited jerk profile (Ruckig: Jerk-Limited Trajectory Generation).
+
+    This function computes a smooth trajectory from an initial joint position `q0` to a final joint
+    position `q1` using a limited jerk profile. The profile is determined such that the joint
+    positions, velocities, and accelerations are continuous and smooth. Optional initial and final
+    joint velocities (`qd0` and `qd1`) can be provided to control the velocity at the start and end.
+
+    Parameters
+    ----------
+    q0 : JointConfigurationType
+        Initial joint positions (n,). The number of elements corresponds to the number of joints.
+    q1 : JointConfigurationType
+        Final joint positions (n,). The number of elements corresponds to the number of joints.
+    t : TimesType
+        Time array (nsamp,) for the trajectory evaluation.
+    qd0 : JointConfigurationType, optional
+        Initial joint velocities (n,). Defaults to zero if not provided.
+    qd1 : JointConfigurationType, optional
+        Final joint velocities (n,). Defaults to zero if not provided.
+    qd_max : JointConfigurationType, optional
+        Maximum joint velocities (n,). Defaults to 1 if not provided.
+    qd_min : JointConfigurationType, optional
+        Minimum joint velocities (n,). Defaults to -1 if not provided.
+    qdd_max : JointConfigurationType, optional
+        Maximum joint accelerations (n,). Defaults to 2 if not provided.
+    jerk_max : JointConfigurationType, optional
+        Maximum joint jerks (n,). Defaults to 10 if not provided.
+    resample : bool, optional
+        Whether to resample the trajectory due to longer duration. Defaults to True.
+
+    Returns
+    -------
+    tuple
+        - qt : JointPathType
+          Interpolated joint positions (nsamp, n).
+        - qdt : JointPathType
+          Interpolated joint velocities (nsamp, n).
+        - qddt : JointPathType
+          Interpolated joint accelerations (nsamp, n).
+
+    Raises
+    ------
+    TypeError
+        If the input vectors `q0`, `q1`, `qd0`, and `qd1` do not have the same size.
+    ValueError
+        If the trajectory time values are non-positive or incorrect.
+    """
+    q0 = vector(q0)
+    m = q0.shape[0]
+    q1 = vector(q1, dim=m)
+    t = vector(t)
+    if qd0 is None:
+        qd0 = np.zeros(m)
+    else:
+        qd0 = vector(qd0, dim=m)
+    if qd1 is None:
+        qd1 = np.zeros(m)
+    else:
+        qd1 = vector(qd1, dim=m)
+    if qd_max is None:
+        qd_max = np.ones(m) * 2
+    elif isinstance(qd_max, (int, float)):
+        qd_max = np.ones(m) * qd_max
+    else:
+        qd_max = vector(qd_max, dim=m)
+    if qdd_max is None:
+        qdd_max = np.ones(m) * 10
+    elif isinstance(qdd_max, (int, float)):
+        qdd_max = np.ones(m) * qdd_max
+    else:
+        qdd_max = vector(qdd_max, dim=m)
+    if jerk_max is None:
+        jerk_max = np.ones(m) * 100
+    elif isinstance(jerk_max, (int, float)):
+        jerk_max = np.ones(m) * jerk_max
+    else:
+        jerk_max = vector(jerk_max, dim=m)
+    if q0.size == q1.size and qd0.size == q0.size and qd1.size == q1.size:
+        tmax = max(t)
+        dt = t[1] - t[0]
+        if tmax <= 0:
+            raise ValueError("Incorrect trajectory time values")
+
+        otg = Ruckig(m, dt)
+        inp = InputParameter(m)
+        out = OutputParameter(m)
+
+        # Set input parameters
+        inp.current_position = q0.tolist()
+        inp.current_velocity = qd0.tolist()
+        inp.current_acceleration = np.zeros(m)
+        inp.minimum_duration = tmax
+
+        inp.target_position = q1.tolist()
+        inp.target_velocity = qd1.tolist()
+        inp.target_acceleration = np.zeros(m)
+
+        inp.max_velocity = qd_max
+        inp.max_acceleration = qdd_max
+        inp.max_jerk = jerk_max
+
+        if qd_min is not None:
+            qd_min = vector(qd_min, dim=m)
+            inp.min_velocity = qd_min
+        if qdd_min is not None:
+            qdd_min = vector(qdd_min, dim=m)
+            inp.min_acceleration = qdd_min
+
+        trajectory = Trajectory(m)
+
+        result = otg.calculate(inp, trajectory)
+        if result == Result.ErrorInvalidInput:
+            raise Exception("Invalid input!")
+
+        if tmax < trajectory.duration:
+            if resample:
+                # print(f"Trajectory duration {trajectory.duration} is longer than the provided time interval {tmax}. It will be prolonged to fit the trajectory duration.")
+                tt = np.arange(0, trajectory.duration + dt, dt)
+            else:
+                raise ValueError(f"Trajectory duration {trajectory.duration} is longer than the provided time interval {tmax}")
+        else:
+            tt = t - t[0]
+        q = []
+        qd = []
+        qdd = []
+        for ti in tt:
+            new_position, new_velocity, new_acceleration = trajectory.at_time(ti)
+            q.append(new_position)
+            qd.append(new_velocity)
+            qdd.append(new_acceleration)
+
+        qt = np.array(q)
+        qdt = np.array(qd)
+        qddt = np.array(qdd)
+        return qt, qdt, qddt
+    else:
+        raise TypeError("Input vecotrs must be same size")
+
+
+def jtraj(q0: JointConfigurationType, q1: JointConfigurationType, t: TimesType, traj: str = "Poly", qd0: Optional[JointConfigurationType] = None, qd1: Optional[JointConfigurationType] = None, **kwargs) -> Tuple[JointPathType, JointPathType, JointPathType]:
     """
     Generate a trajectory from initial joint positions `q0` to final joint positions `q1` over time `t`.
 
@@ -412,10 +597,11 @@ def jtraj(q0: JointConfigurationType, q1: JointConfigurationType, t: TimesType, 
     q1 : JointConfigurationType
         Final joint positions (n,).
     t : TimesType
-        Trajectory time (nsamp,).
+        Time array (nsamp,) for the trajectory evaluation.
     traj : str, optional
         Trajectory type. Possible values are:
         - 'poly': Polynomial trajectory.
+        - 'jerk': Jerk-limited trajectory using Ruckig.
         - 'trap': Trapezoidal trajectory.
         - 'line': Linear trajectory.
         By default, 'poly'.
@@ -443,18 +629,20 @@ def jtraj(q0: JointConfigurationType, q1: JointConfigurationType, t: TimesType, 
 
     q0 = vector(q0)
     q1 = vector(q1)
-    if check_option(traj, "poly", **kwargs):
+    if check_option(traj, "Poly"):
         _traj = jpoly
-    elif check_option(traj, "trap", **kwargs):
+    elif check_option(traj, "Trap"):
         _traj = jtrap
-    elif check_option(traj, "line", **kwargs):
+    elif check_option(traj, "Line"):
         _traj = jline
+    elif check_option(traj, "Jerk"):
+        _traj = jjerk
     else:
         raise ValueError(f"Trajectory type {traj} not supported")
-    return _traj(q0, q1, t)
+    return _traj(q0, q1, t, **kwargs)
 
 
-def cline(x0: Pose3DType, x1: Pose3DType, t: TimesType, short: bool = True) -> Tuple[Poses3DType, Velocities3DType, Accelerations3DType]:
+def cline(x0: Pose3DType, x1: Pose3DType, t: TimesType, short: bool = True, **kwargs) -> Tuple[Poses3DType, Velocities3DType, Accelerations3DType]:
     """
     Generate a Cartesian trajectory from `x0` to `x1` with constant velocity.
 
@@ -473,7 +661,7 @@ def cline(x0: Pose3DType, x1: Pose3DType, t: TimesType, short: bool = True) -> T
         Final Cartesian pose (7,). Similar to `x0`, this is a 7-element vector
         representing the final pose.
     t : TimesType
-        is evaluated.
+        Time array (nsamp,) for the trajectory evaluation.
     short : bool, optional
         If True (default), the shortest rotation is taken between the initial and
         final orientations. If False, the long path is taken.
@@ -502,7 +690,7 @@ def cline(x0: Pose3DType, x1: Pose3DType, t: TimesType, short: bool = True) -> T
     return xt, xdt, xddt
 
 
-def ctrap(x0: Pose3DType, x1: Pose3DType, t: TimesType, short: bool = True) -> Tuple[Poses3DType, Velocities3DType, Accelerations3DType]:
+def ctrap(x0: Pose3DType, x1: Pose3DType, t: TimesType, short: bool = True, **kwargs) -> Tuple[Poses3DType, Velocities3DType, Accelerations3DType]:
     """
     Generate a Cartesian trajectory from `x0` to `x1` with trapezoidal velocity profile.
 
@@ -521,7 +709,7 @@ def ctrap(x0: Pose3DType, x1: Pose3DType, t: TimesType, short: bool = True) -> T
         Final Cartesian pose (7,). Similar to `x0`, this is a 7-element vector
         representing the final pose.
     t : TimesType
-        is evaluated.
+        Time array (nsamp,) for the trajectory evaluation.
     short : bool, optional
         If True (default), the shortest rotation is taken between the initial and
         final orientations. If False, the long path is taken.
@@ -550,7 +738,7 @@ def ctrap(x0: Pose3DType, x1: Pose3DType, t: TimesType, short: bool = True) -> T
     return xt, xdt, xddt
 
 
-def cpoly(x0: Pose3DType, x1: Pose3DType, t: TimesType, short: bool = True) -> Tuple[Poses3DType, Velocities3DType, Accelerations3DType]:
+def cpoly(x0: Pose3DType, x1: Pose3DType, t: TimesType, short: bool = True, **kwargs) -> Tuple[Poses3DType, Velocities3DType, Accelerations3DType]:
     """
     Generate a Cartesian trajectory from `x0` to `x1` using a 5th order polynomial.
 
@@ -569,7 +757,7 @@ def cpoly(x0: Pose3DType, x1: Pose3DType, t: TimesType, short: bool = True) -> T
         Final Cartesian pose (7,). Similar to `x0`, this is a 7-element vector
         representing the final pose.
     t : TimesType
-        is evaluated.
+        Time array (nsamp,) for the trajectory evaluation.
     short : bool, optional
         If True (default), the shortest rotation is taken between the initial and
         final orientations. If False, the long path is taken.
@@ -598,7 +786,140 @@ def cpoly(x0: Pose3DType, x1: Pose3DType, t: TimesType, short: bool = True) -> T
     return xt, xdt, xddt
 
 
-def ctraj(x0: Pose3DType, x1: Pose3DType, t: TimesType, traj: str = "poly", short: bool = True) -> Tuple[Poses3DType, Velocities3DType, Accelerations3DType]:
+def cjerk(
+    x0: Pose3DType,
+    x1: Pose3DType,
+    t: TimesType,
+    short: bool = True,
+    v_max: Optional[Velocity3DType] = None,
+    v_min: Optional[Velocity3DType] = None,
+    a_max: Optional[Acceleration3DType] = None,
+    a_min: Optional[Acceleration3DType] = None,
+    jerk_max: Optional[Acceleration3DType] = None,
+    resample: bool = True,
+    **kwargs,
+) -> Tuple[Poses3DType, Velocities3DType, Accelerations3DType]:
+    """
+    Generate a Cartesian trajectory from `x0` to `x1` using a limited jerk profile
+    (Ruckig: Jerk-Limited Trajectory Generation).
+
+    This function generates a trajectory between the initial Cartesian pose `x0`
+    and the final Cartesian pose `x1`, using a limited jerk profile. Ruckig treats
+    every DOF as an independent scalar trajectory. That is problematic because
+    quaternions must satisfy unit norm constraint. Therefore, we generate a scalar
+    trajectory:
+
+            s(t) ∈ [0,1]
+
+    and apply Ruckig trajectory generation to it.
+
+    The poses are defined by both position and quaternion. Optionally, the shortest
+    rotation can be chosen between the two poses.
+
+    Parameters
+    ----------
+    x0 : Pose3DType
+        Initial Cartesian pose (7,). The pose is represented by a 7-element vector,
+        where the first three elements are the position, and the last four are the
+        quaternion orientation.
+    x1 : Pose3DType
+        Final Cartesian pose (7,). Similar to `x0`, this is a 7-element vector
+        representing the final pose.
+    t : TimesType
+        Time array (nsamp,) for the trajectory evaluation.
+    short : bool, optional
+        If True (default), the shortest rotation is taken between the initial and
+        final orientations. If False, the long path is taken.
+    v_max : Velocity3DType, optional
+        Maximum Cartesian velocities (6,). If not provided, defaults are used.
+    v_min : Velocity3DType, optional
+        Minimum Cartesian velocities (6,). If not provided, defaults are used.
+    a_max : Acceleration3DType, optional
+        Maximum Cartesian accelerations (6,). If not provided, defaults are used.
+    a_min : Acceleration3DType, optional
+        Minimum Cartesian accelerations (6,). If not provided, defaults are used.
+    jerk_max : Acceleration3DType, optional
+        Maximum Cartesian jerk (6,). If not provided, defaults are used.
+    resample : bool, optional
+        Whether to resample the trajectory due to longer duration. Defaults to True.
+
+    Returns
+    -------
+    tuple
+        - xt : Poses3DType
+          Cartesian trajectory - pose (nsamp, 7).
+        - xdt : Velocities3DType
+          Cartesian trajectory - velocity (nsamp, 6).
+        - xddt : Accelerations3DType
+          Cartesian trajectory - acceleration (nsamp, 6).
+
+    Raises
+    ------
+    ValueError
+        If the time array `t` contains non-positive values.
+    """
+    x0 = vector(x0, dim=7)
+    x1 = vector(x1, dim=7)
+    tmax = max(t)
+    dt = t[1] - t[0]
+    if tmax <= 0:
+        raise ValueError("Incorrect trajectory time values")
+
+    dx = xerr(x0, x1)
+    dist = np.linalg.norm(dx[:3])
+    ang = np.linalg.norm(dx[3:])
+    if not short:
+        ang = 2 * np.pi - ang
+        dx[3:] = 2 * np.pi - dx[3:]
+    dx = np.clip(np.abs(dx), _eps, np.inf)
+
+    if v_max is None:
+        v_max = np.ones(6) * 2
+    elif isinstance(v_max, (int, float)):
+        v_max = np.ones(6) * v_max
+    else:
+        v_max = vector(v_max, dim=6)
+    # max_velocity = [np.min(np.concatenate((v_max[:3] / dist, v_max[3:] / ang)))]
+    max_velocity = [np.min(v_max / np.abs(dx))]
+
+    if a_max is None:
+        a_max = np.ones(6) * 10
+    elif isinstance(a_max, (int, float)):
+        a_max = np.ones(6) * a_max
+    else:
+        a_max = vector(a_max, dim=6)
+    # max_acceleration = [np.min(np.concatenate((a_max[:3] / dist, a_max[3:] / ang)))]
+    max_acceleration = [np.min(a_max / np.abs(dx))]
+
+    if jerk_max is None:
+        jerk_max = np.ones(6) * 100
+    elif isinstance(jerk_max, (int, float)):
+        jerk_max = np.ones(6) * jerk_max
+    else:
+        jerk_max = vector(jerk_max, dim=6)
+    # max_jerk = [np.min(np.concatenate((jerk_max[:3] / dist, jerk_max[3:] / ang)))]
+    max_jerk = [np.min(jerk_max / np.abs(dx))]
+
+    min_velocity = None
+    min_acceleration = None
+    if v_min is not None:
+        v_min = vector(v_min, dim=6)
+        # min_velocity = [np.min(np.concatenate((v_min[:3] / dist, v_min[3:] / ang)))]
+        min_velocity = [np.min(v_min / np.abs(dx))]
+    if a_min is not None:
+        a_min = vector(a_min, dim=6)
+        # min_acceleration = [np.min(np.concatenate((a_min[:3] / dist, a_min[3:] / ang)))]
+        min_acceleration = [np.min(a_min / np.abs(dx))]
+
+    s, sd, sdd = jjerk(0, 1, t, qd_max=max_velocity, qd_min=min_velocity, qdd_max=max_acceleration, qdd_min=min_acceleration, jerk_max=max_jerk, resample=resample)
+    t = np.arange(s.shape[0]) * dt
+    xt = xinterp(x0, x1, s, short=short)
+    xdt = gradientCartesianPath(xt, t)
+    xddt = gradientPath(xdt, t)
+    return xt, xdt, xddt
+
+
+def ctraj(x0: Pose3DType, x1: Pose3DType, t: TimesType, traj: str = "Poly", short: bool = True, **kwargs) -> Tuple[Poses3DType, Velocities3DType, Accelerations3DType]:
     """
     Generate a Cartesian trajectory from `x0` to `x1` based on the specified trajectory type.
 
@@ -616,12 +937,13 @@ def ctraj(x0: Pose3DType, x1: Pose3DType, t: TimesType, traj: str = "poly", shor
         Final Cartesian pose (7,). Similar to `x0`, this is a 7-element vector
         representing the final pose.
     t : TimesType
-        is evaluated.
+        Time array (nsamp,) for the trajectory evaluation.
     traj : str, optional
         The type of trajectory to generate. Options are:
-        - "poly" for polynomial (default),
-        - "trap" for trapezoidal velocity,
-        - "line" for linear velocity.
+        - "Poly" for polynomial (default),
+        - "Jerk" for jerk-limited trajectory using Ruckig,
+        - "Trap" for trapezoidal velocity,
+        - "Line" for linear velocity.
     short : bool, optional
         If True (default), the shortest rotation is taken between the initial and
         final orientations. If False, the long path is taken.
@@ -639,19 +961,21 @@ def ctraj(x0: Pose3DType, x1: Pose3DType, t: TimesType, traj: str = "poly", shor
     Raises
     ------
     ValueError
-        If the trajectory type is not one of the supported types: "poly", "trap", or "line".
+        If the trajectory type is not one of the supported types: "Jerk", "Poly", "Trap", or "Line".
     """
     x0 = vector(x0, dim=7)
     x1 = vector(x1, dim=7)
-    if check_option(traj, "poly"):
+    if check_option(traj, "Poly"):
         _traj = cpoly
-    elif check_option(traj, "trap"):
+    elif check_option(traj, "Trap"):
         _traj = ctrap
-    elif check_option(traj, "line"):
+    elif check_option(traj, "Line"):
         _traj = cline
+    elif check_option(traj, "Jerk"):
+        _traj = cjerk
     else:
         raise ValueError(f"Trajectory type {traj} not supported")
-    return _traj(x0, x1, t, short=short)
+    return _traj(x0, x1, t, short=short, **kwargs)
 
 
 def interp(y1: ArrayLike, y2: ArrayLike, s: ArrayLike) -> np.ndarray:
@@ -1698,14 +2022,14 @@ def pathlen(path: ArrayLike, scale: Union[float, ArrayLike] = [1.0, 1.0], Cartes
     m = path.shape[1]
 
     if m == 7 and Cartesian:
-        dp = np.diff(path[:, 0:3], axis=0)
-        dq = 2 * qlog(qmtimes(path[1:, 3:7], qinv(path[:-1, 3:7])))
+        dp = np.atleast_2d(np.diff(path[:, 0:3], axis=0))
+        dq = np.atleast_2d(2 * qlog(qmtimes(path[1:, 3:7], qinv(path[:-1, 3:7]))))
         dx = (scale[0] * np.sum(dp**2, axis=1) + scale[1] * np.sum(dq**2, axis=1)) ** 0.5
     elif m == 4 and Cartesian:
-        dq = 2 * qlog(qmtimes(path[1:, :], qinv(path[:-1, :])))
+        dq = np.atleast_2d(2 * qlog(qmtimes(path[1:, :], qinv(path[:-1, :]))))
         dx = np.sum(dq**2, axis=1) ** 0.5
     else:
-        dp = np.diff(path, axis=0)
+        dp = np.atleast_2d(np.diff(path, axis=0))
         dx = np.sum(dp**2, axis=1) ** 0.5
 
     si = np.cumsum(np.concatenate(([0], np.abs(dx))))
@@ -1796,7 +2120,7 @@ if __name__ == "__main__":
     q1 = np.array((1, 2, 3, 4))
     q2 = np.array((2, 3, -5, 7))
 
-    fig, ax = plt.subplots(3, 3, num="Joint trajectories using 'jline'", figsize=(8, 8))
+    fig, ax = plt.subplots(3, 4, num="Joint trajectories using 'jline'", figsize=(12, 8))
     qt, qdt, qddt = jline(q1, q2, t)
     ax[0, 0].plot(t, qt)
     ax[0, 0].grid()
@@ -1823,10 +2147,10 @@ if __name__ == "__main__":
     ax[2, 1].grid()
     ax[2, 1].set_title("Acceleration")
 
-    qt, qdt, qddt = jtraj(q1, q2, t)
+    qt, qdt, qddt = jpoly(q1, q2, t)
     ax[0, 2].plot(t, qt)
     ax[0, 2].grid()
-    ax[0, 2].set_title("Traj")
+    ax[0, 2].set_title("Poly")
     ax[1, 2].plot(t, qdt)
     gqt = np.gradient(qt, t, axis=0)
     ax[1, 2].plot(t, gqt, "--")
@@ -1836,7 +2160,23 @@ if __name__ == "__main__":
     ax[2, 2].grid()
     ax[2, 2].set_title("Acceleration")
 
+    qt, qdt, qddt = jtraj(q1, q2, t, traj="Jerk", qd_max=10, qdd_max=10, jerk_max=100, resample=True)
+    if qt.shape[0] > t.shape[0]:
+        t = np.arange(qt.shape[0]) * (t[1] - t[0])
+    ax[0, 3].plot(t, qt)
+    ax[0, 3].grid()
+    ax[0, 3].set_title("Jerk")
+    ax[1, 3].plot(t, qdt)
+    gqt = np.gradient(qt, t, axis=0)
+    ax[1, 3].plot(t, gqt, "--")
+    ax[1, 3].grid()
+    ax[1, 3].set_title("Velocity")
+    ax[2, 3].plot(t, qddt)
+    ax[2, 3].grid()
+    ax[2, 3].set_title("Acceleration")
+
     # Cartesian trajectories
+    t = np.linspace(0, 2, num=201)
     p0 = np.array([0, 1, 3])
     p1 = np.array([1, 4, -1])
     p2 = np.array([-1, 1, 1])
@@ -1855,41 +2195,43 @@ if __name__ == "__main__":
     xt, xdt, xddt = ctrap(x0, x1, t)
     xt1, xdt1, xddt1 = cline(x0, x1, t)
     xt2, xdt2, xddt2 = cpoly(x0, x1, t)
-    fig, ax = plt.subplots(
-        3,
-        2,
-        num="Cartesian trajectories using 'ctrap', 'cline and 'cpoly'",
-        figsize=(8, 8),
-    )
-    ax[0, 0].plot(t, xt[:, :3])
-    ax[0, 0].plot(t, xt1[:, :3], "--")
-    ax[0, 0].plot(t, xt2[:, :3], ":")
+    xt3, xdt3, xddt3 = cjerk(x0, x1, t)
+    fig, ax = plt.subplots(3, 2, num="Cartesian trajectories using 'ctrap', 'cline, 'cpoly', and 'cjerk'", figsize=(8, 8))
+    ax[0, 0].plot(t, xt[:, :3], label="Trap")
+    ax[0, 0].plot(t, xt1[:, :3], "--", label="Line")
+    ax[0, 0].plot(t, xt2[:, :3], ":", label="Poly")
+    ax[0, 0].plot(t, xt3[:, :3], "-.", label="Jerk")
     ax[0, 0].grid()
     ax[0, 0].set_title("$p$")
     ax[1, 0].plot(t, xdt[:, :3])
     ax[1, 0].plot(t, xdt1[:, :3], "--")
     ax[1, 0].plot(t, xdt2[:, :3], ":")
+    ax[1, 0].plot(t, xdt3[:, :3], "-.")
     ax[1, 0].grid()
     ax[1, 0].set_title("$\\dot p$")
     ax[2, 0].plot(t, xddt[:, :3])
     ax[2, 0].plot(t, xddt1[:, :3], "--")
     ax[2, 0].plot(t, xddt2[:, :3], ":")
+    ax[2, 0].plot(t, xddt3[:, :3], "-.")
     ax[2, 0].grid()
     ax[2, 0].set_title("$\\ddot p$")
 
     ax[0, 1].plot(t, xt[:, 3:])
     ax[0, 1].plot(t, xt1[:, 3:], "--")
     ax[0, 1].plot(t, xt2[:, 3:], ":")
+    ax[0, 1].plot(t, xt3[:, 3:], "-.")
     ax[0, 1].grid()
     ax[0, 1].set_title("$Q$")
     ax[1, 1].plot(t, xdt[:, 3:])
     ax[1, 1].plot(t, xdt1[:, 3:], "--")
     ax[1, 1].plot(t, xdt2[:, 3:], ":")
+    ax[1, 1].plot(t, xdt3[:, 3:], "-.")
     ax[1, 1].grid()
     ax[1, 1].set_title("$\\omega$")
     ax[2, 1].plot(t, xddt[:, 3:])
     ax[2, 1].plot(t, xddt1[:, 3:], "--")
     ax[2, 1].plot(t, xddt2[:, 3:], ":")
+    ax[2, 1].plot(t, xddt3[:, 3:], "-.")
     ax[2, 1].grid()
     ax[2, 1].set_title("$\\dot\\omega$")
 

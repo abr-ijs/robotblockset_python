@@ -15,6 +15,7 @@ from __future__ import annotations
 # pyright: reportMissingImports=false
 
 from abc import abstractmethod
+import os
 from typing import Optional, Iterable, List, Any
 
 
@@ -28,11 +29,12 @@ except Exception as e:
 
 try:
     from builtin_interfaces.msg import Duration
-    from controller_manager_msgs.srv import ListControllers, SwitchController, LoadController, UnloadController, ConfigureController
-    from controller_manager_msgs.msg import ControllerState
+    from controller_manager_msgs.srv import ListControllers, SwitchController, LoadController, UnloadController, ConfigureController, SetHardwareComponentState, ListHardwareComponents
+    from controller_manager_msgs.msg import ControllerState, HardwareComponentState
     from control_msgs.action import FollowJointTrajectory
     from action_msgs.msg import GoalStatus
     from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+    from lifecycle_msgs.msg import State
 except Exception as e:
     raise e from RuntimeError("Problems with importin ROS2 messages. Check if all are installed.")
 
@@ -105,18 +107,47 @@ class controller_manager_helper:
         else:
             self._namespace = "/" + str(namespace).strip("/")
             
-        self.cm_name = f"{self._namespace}/{controller_manager_name('/')}"
+        self.cm_name = f"{self._namespace}/{str(controller_manager_name).strip('/')}"
+        self._ros_distro = os.environ.get("ROS_DISTRO", "unknown")
         # Core service clients
         self.list_client = self._node.create_client(ListControllers, f"{self.cm_name}/list_controllers")
         self.switch_client = self._node.create_client(SwitchController, f"{self.cm_name}/switch_controller")
         self.load_client = self._node.create_client(LoadController, f"{self.cm_name}/load_controller")
         self.unload_client = self._node.create_client(UnloadController, f"{self.cm_name}/unload_controller")
         self.configure_client = self._node.create_client(ConfigureController, f"{self.cm_name}/configure_controller")
+        self.list_hardware_client = self._node.create_client(ListHardwareComponents, f"{self.cm_name}/list_hardware_components")
+        self.set_hardware_state_client = self._node.create_client(SetHardwareComponentState, f"{self.cm_name}/set_hardware_component_state")
 
         self._node.get_logger().info("Waiting for controller_manager lifecycle services ...")
-        for c in [self.list_client, self.switch_client, self.load_client, self.unload_client, self.configure_client]:
+        for c in [self.list_client, self.switch_client, self.load_client, self.unload_client, self.configure_client, self.list_hardware_client, self.set_hardware_state_client]:
             c.wait_for_service()
         self._node.get_logger().info("Lifecycle helper connected.")
+
+    def _set_switch_controller_lists(self, req: SwitchController.Request, start_list: Iterable[str], stop_list: Iterable[str]) -> None:
+        """
+        Set switch request controller lists with ROS distro API compatibility.
+
+        Newer distros (e.g. Humble+) use activate/deactivate fields, while
+        legacy distros use start/stop fields.
+        """
+        start_list = list(start_list)
+        stop_list = list(stop_list)
+
+        has_new = hasattr(req, "activate_controllers") and hasattr(req, "deactivate_controllers")
+        has_old = hasattr(req, "start_controllers") and hasattr(req, "stop_controllers")
+
+        if has_new:
+            req.activate_controllers = start_list
+            req.deactivate_controllers = stop_list
+            return
+        if has_old:
+            req.start_controllers = start_list
+            req.stop_controllers = stop_list
+            return
+
+        raise AttributeError(
+            f"SwitchController request has no supported controller-list fields for ROS distro '{self._ros_distro}'"
+        )
 
     # ----------------------------- Query utilities -----------------------------
     def list_controllers(self) -> List[ControllerState]:
@@ -283,8 +314,7 @@ class controller_manager_helper:
         if not self.configure(name):
             return False
         req = SwitchController.Request()
-        req.start_controllers = [name]
-        req.stop_controllers = []
+        self._set_switch_controller_lists(req, start_list=[name], stop_list=[])
         req.strictness = SwitchController.Request.STRICT
         req.start_asap = False
         req.activate_asap = True
@@ -315,17 +345,18 @@ class controller_manager_helper:
         if self.get_state(name) != "active":
             return True  # already not active
         req = SwitchController.Request()
-        req.start_controllers = []
-        req.stop_controllers = [name]
+        self._set_switch_controller_lists(req, start_list=[], stop_list=[name])
         req.strictness = SwitchController.Request.STRICT
         req.start_asap = False
         req.activate_asap = False
         req.timeout = Duration(sec=5)
         result = self.switch_client.call(req)
         ok = bool(result and result.ok)
+        if self._wait_for_state(name, states=["inactive", "unconfigured", None]) in ["inactive", "unconfigured", None]:
+            return True
         if not ok:
             self._node.get_logger().error(f"Deactivate failed: {name}")
-        return ok
+        return False
 
     def unload(self, name: str) -> bool:
         """
@@ -429,8 +460,7 @@ class controller_manager_helper:
         start_list = list(start_list)
         stop_list = list(stop_list)
         req = SwitchController.Request()
-        req.activate_controllers = start_list
-        req.deactivate_controllers = stop_list
+        self._set_switch_controller_lists(req, start_list=start_list, stop_list=stop_list)
         req.strictness = SwitchController.Request.BEST_EFFORT
         req.start_asap = False
         req.activate_asap = True
@@ -480,6 +510,163 @@ class controller_manager_helper:
 
         # If no active controller is found in the provided list, return None
         return None
+
+    # ----------------------------- Hardware lifecycle ops ----
+
+    def list_hardware_components(self) -> List[HardwareComponentState]:
+        """
+        Query the controller_manager for all hardware components.
+
+        Returns
+        -------
+        list of HardwareComponentState
+            A list of hardware component state objects. If the service call fails,
+            an empty list is returned and an error is logged.
+        """
+        req = ListHardwareComponents.Request()
+        result = self.list_hardware_client.call(req)
+        if result is not None:
+            return result.component
+        self._node.get_logger().error("Failed to list hardware components")
+        return []
+
+    def get_hardware_state(self, name: str) -> Optional[str]:
+        """
+        Get the lifecycle state of a specific hardware component.
+
+        Parameters
+        ----------
+        name : str
+            Name of the hardware component.
+
+        Returns
+        -------
+        str or None
+            The hardware component state string (e.g. ``"unconfigured"``, ``"inactive"``, ``"active"``),
+            or ``None`` if the hardware component is not found.
+        """
+        for h in self.list_hardware_components():
+            if h.name == name:
+                # In ROS 2 Humble this is a lifecycle State message; normalize to label.
+                state = h.state
+                if hasattr(state, "label"):
+                    return state.label
+                if isinstance(state, str):
+                    return state
+                return str(state)
+        return None
+
+    def configure_hardware(self, name: str) -> bool:
+        """
+        Configure a hardware component (unconfigured -> inactive).
+
+        Parameters
+        ----------
+        name : str
+            Name of the hardware component to configure.
+
+        Returns
+        -------
+        bool
+            ``True`` if the hardware component is already configured or was configured successfully,
+            ``False`` otherwise.
+        """
+        state = self.get_hardware_state(name)
+        if state in ["inactive", "active"]:
+            return True  # already configured
+
+        req = SetHardwareComponentState.Request()
+        req.name = name
+        req.target_state.id = State.PRIMARY_STATE_INACTIVE  # transition from unconfigured to inactive
+        result = self.set_hardware_state_client.call(req)
+        ok = bool(result and result.ok)
+        
+        # Wait for state to settle
+        state = self._wait_for_hardware_state(name, states=["inactive", "active"], timeout=2.0)
+        if state in ["inactive", "active"]:
+            return True
+        if not ok:
+            self._node.get_logger().error(f"Configure hardware failed: {name}")
+        return False
+
+    def activate_hardware(self, name: str) -> bool:
+        """
+        Activate a hardware component (inactive -> active).
+
+        Parameters
+        ----------
+        name : str
+            Name of the hardware component to activate.
+
+        Returns
+        -------
+        bool
+            ``True`` if the hardware component is already active or was activated successfully,
+            ``False`` otherwise.
+        """
+        state = self.get_hardware_state(name)
+        if state == "active":
+            return True  # already active
+
+        if state == "unconfigured":
+            if not self.configure_hardware(name):
+                return False
+
+        req = SetHardwareComponentState.Request()
+        req.name = name
+        req.target_state.id = State.PRIMARY_STATE_ACTIVE
+        result = self.set_hardware_state_client.call(req)
+        ok = bool(result and result.ok)
+        
+        # Wait for state to settle
+        state = self._wait_for_hardware_state(name, states=["active"], timeout=2.0)
+        if state == "active":
+            return True
+        if not ok:
+            self._node.get_logger().error(f"Activate hardware failed: {name}")
+        return False
+
+    def deactivate_hardware(self, name: str) -> bool:
+        """
+        Deactivate a hardware component (active -> inactive).
+
+        Parameters
+        ----------
+        name : str
+            Name of the hardware component to deactivate.
+
+        Returns
+        -------
+        bool
+            ``True`` if the hardware component is already not active or was deactivated successfully,
+            ``False`` otherwise.
+        """
+        state = self.get_hardware_state(name)
+        if state != "active":
+            return True  # already not active
+
+        req = SetHardwareComponentState.Request()
+        req.name = name
+        req.target_state.id = State.PRIMARY_STATE_INACTIVE
+        result = self.set_hardware_state_client.call(req)
+        ok = bool(result and result.ok)
+        if not ok:
+            self._node.get_logger().error(f"Deactivate hardware failed: {name}")
+        return ok
+
+    def _wait_for_hardware_state(self, name: str, states: Iterable[Optional[str]], timeout: float = 2.0, period: float = 0.05) -> Optional[str]:
+        """
+        Wait briefly for hardware component state to match one of ``states``.
+        """
+        states = set(states)
+        deadline = monotonic() + timeout
+        while True:
+            state = self.get_hardware_state(name)
+            if state in states:
+                return state
+            if monotonic() >= deadline:
+                return state
+            sleep(period)
 
     def _shutdown(self) -> None:
         """
@@ -687,43 +874,43 @@ class CsfCartesianImpedanceControllerInterface(RosControllerInterface):
 
     def _normalise_compliance(
         self,
-        Kp: Optional[ArrayLike] = None,
-        Kr: Optional[ArrayLike] = None,
+        stiffness: Optional[ArrayLike] = None,
         R: Optional[ArrayLike] = None,
         D: Optional[float] = None,
+        **kwargs,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray, float]:
-        """Return validated Cartesian impedance parameters."""
-        if Kp is None:
-            Kp = self.Kp
-        elif isscalar(Kp):
-            Kp = np.ones(3) * Kp
+        """
+        Accepts 'stiffness' (scalar, 2D, or 6D), and optional R, D.
+        Returns (Kp, Kr, R, D) as 3D vectors/matrix/scalar.
+        """
+        # Handle stiffness
+        if stiffness is None:
+            Kp = np.array(self.Kp, dtype=float)
+            Kr = np.array(self.Kr, dtype=float)
+        elif isscalar(stiffness):
+            Kp = np.ones(3) * float(stiffness)
+            Kr = np.ones(3) * float(stiffness)
+        elif isvector(stiffness, dim=2):
+            Kp = np.ones(3) * float(stiffness[0])
+            Kr = np.ones(3) * float(stiffness[1])
         else:
-            Kp = vector(Kp, dim=3)
-
-        if Kr is None:
-            Kr = self.Kr
-        elif isscalar(Kr):
-            Kr = np.ones(3) * Kr
-        else:
-            Kr = vector(Kr, dim=3)
-
-        if R is None:
-            R = self.R
-        else:
-            R = matrix(R, shape=(3, 3))
-
+            s = vector(stiffness, dim=6)
+            Kp = s[:3]
+            Kr = s[3:]
+        # Handle R
+        Rm = matrix(R, shape=(3, 3)) if R is not None else self.R
+        # Handle D
         if D is None:
-            D = self.D
+            Dval = self.D
         elif not isscalar(D):
             raise ValueError("Damping 'D' is not scalar")
-
-        D = float(D)
-        if D < 0 or D > 2:
+        else:
+            Dval = float(D)
+        if Dval < 0 or Dval > 2:
             raise ValueError("Damping 'D' must be in range [0, 2]")
+        return np.asarray(Kp, dtype=float), np.asarray(Kr, dtype=float), np.asarray(Rm, dtype=float), Dval
 
-        return np.asarray(Kp, dtype=float), np.asarray(Kr, dtype=float), np.asarray(R, dtype=float), D
-
-    def GetCartesianCompliance(self) -> tuple[np.ndarray, np.ndarray, np.ndarray, float]:
+    def GetCsfCartesianCompliance(self) -> tuple[np.ndarray, np.ndarray, np.ndarray, float]:
         """Return the active Cartesian impedance parameters."""
         return self.Kp, self.Kr, self.R, self.D
 
@@ -735,38 +922,49 @@ class CsfCartesianImpedanceControllerInterface(RosControllerInterface):
         """Return the Cartesian damping scaling factor."""
         return self.D
 
-    def SetCartesianCompliance(
-        self,
-        Kp: Optional[ArrayLike] = None,
-        Kr: Optional[ArrayLike] = None,
-        R: Optional[ArrayLike] = None,
-        D: Optional[float] = None,
-        hold_pose: bool = True,
-    ) -> int:
-        """Update Cartesian impedance parameters for subsequent CSF commands."""
-        Kp, Kr, R, D = self._normalise_compliance(Kp=Kp, Kr=Kr, R=R, D=D)
+    def SetCartesianStiffness(self, stiffness: ArrayLike, hold_pose: bool = True, **kwargs) -> int:
+        """
+        Update Cartesian stiffness.
+
+        Parameters
+        ----------
+        stiffness : ArrayLike
+            Target Cartesian stiffness (scalar, 2D, or 6D).
+        hold_pose : bool, optional
+            If True, hold the current pose after updating impedance parameters.
+        R : ArrayLike, optional (as kwarg)
+            Rotation matrix for the translational stiffness frame. If not given, keeps the current value.
+        D : float, optional (as kwarg)
+            Damping scaling factor. If not given, keeps the current value.
+        **kwargs : Any
+            Additional keyword arguments (currently only R and D are supported).
+
+        Returns
+        -------
+        int
+            Motion result code.
+
+        Notes
+        -----
+        If R or D are not provided, the current values are kept.
+        """
+        Kp, Kr, R_valid, D_valid = self._normalise_compliance(stiffness=stiffness, **kwargs)
         self.Kp = Kp
         self.Kr = Kr
-        self.R = R
-        self.D = D
-
+        self.R = R_valid
+        self.D = D_valid
         if hold_pose and getattr(self, "_registered", False) and getattr(self, "_robot", None) is not None:
-            x = getattr(self._robot._command, "x", None)
+            x = getattr(self._robot, "x", None)
+            if x is None:
+                x = getattr(self._robot._command, "x", None)
             if x is not None:
-                trq = getattr(self._robot._command, "FT", None)
-                if trq is None:
-                    trq = np.zeros(6)
-                self.GoTo_X(x, np.zeros(6), trq, 0.0, Kp=Kp, Kr=Kr, R=R, D=D)
-
+                trq = np.zeros(6)
+                self.GoTo_X(x, np.zeros(6), trq, 0.0, Kp=Kp, Kr=Kr, R=R_valid, D=D_valid)
         return MotionResultCodes.MOTION_SUCCESS.value
-
-    def SetCartesianStiffness(self, Kp: Optional[ArrayLike] = None, Kr: Optional[ArrayLike] = None, hold_pose: bool = True) -> int:
-        """Update Cartesian stiffness while preserving orientation frame and damping."""
-        return self.SetCartesianCompliance(Kp=Kp, Kr=Kr, R=self.R, D=self.D, hold_pose=hold_pose)
 
     def SetCartesianDamping(self, D: Optional[float] = None, hold_pose: bool = True) -> int:
         """Update Cartesian damping while preserving stiffness."""
-        return self.SetCartesianCompliance(Kp=self.Kp, Kr=self.Kr, R=self.R, D=D, hold_pose=hold_pose)
+        return self.SetCartesianStiffness(stiffness=np.hstack((self.Kp, self.Kr)), R=self.R, D=D, hold_pose=hold_pose)
 
     def SetCartesianSoft(self, stiffness: ArrayLike, hold_pose: bool = True) -> int:
         """Scale Cartesian stiffness relative to this controller's configured defaults."""
@@ -785,21 +983,12 @@ class CsfCartesianImpedanceControllerInterface(RosControllerInterface):
         fac_r = np.clip(fac_r, 0.0, 1.0)
         fac = float(np.max(np.hstack((fac_p, fac_r))))
 
-        return self.SetCartesianCompliance(
-            Kp=self._default_Kp * fac_p,
-            Kr=self._default_Kr * fac_r,
+        return self.SetCartesianStiffness(
+            stiffness=np.hstack((self._default_Kp * fac_p, self._default_Kr * fac_r)),
             R=self._default_R,
             D=self._default_D * fac,
             hold_pose=hold_pose,
         )
-
-    def SetCartesianStiff(self, hold_pose: bool = True) -> int:
-        """Set Cartesian impedance to the configured stiff defaults."""
-        return self.SetCartesianSoft(1.0, hold_pose=hold_pose)
-
-    def SetCartesianCompliant(self, hold_pose: bool = True) -> int:
-        """Set Cartesian impedance to zero stiffness."""
-        return self.SetCartesianSoft(0.0, hold_pose=hold_pose)
 
     def _init_ros_interfaces(self) -> None:
         """Create ROS 2 publishers used by the Cartesian impedance controller."""

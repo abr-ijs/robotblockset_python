@@ -31,7 +31,7 @@ import numpy as np
 from typing import Optional, Tuple, Union
 
 from robotblockset.rbs_typing import ArrayLike, JointConfigurationType, Pose3DType, TCPType, HomogeneousMatrixType, RotationMatrixType, Vector3DType, JacobianType
-from robotblockset.robot_models import kinmodel_panda, invkin_model_panda, invkin_model_panda_valid, kinmodel_lwr, kinmodel_iiwa, kinmodel_ur10, kinmodel_ur10e, kinmodel_ur5, kinmodel_ur5e, kinmodel_crx20, kinmodel_hc20, kinmodel_z1
+from robotblockset.robot_models import kinmodel_panda, invkin_model_panda, invkin_model_panda_valid, kinmodel_lwr, kinmodel_iiwa, kinmodel_ur10, kinmodel_ur10e, kinmodel_ur5, kinmodel_ur5e, kinmodel_crx20, kinmodel_hc20, kinmodel_hc30, kinmodel_z1
 from robotblockset.robots import robot
 
 
@@ -528,6 +528,9 @@ class hc20_spec(robot):
         self.Name = "hc20"
         self.nj = 6
         self.TCPGripper = np.eye(4)
+        _TBase = np.eye(4)
+        _TBase[2, 3] = 0.38
+        self.TBase = _TBase
         self.q_home = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])  # home joint configuration
         self.q_init = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])  # init work joint configuration
         self.q_max = np.array([np.pi, np.pi, 4.31096, 3.66519, np.pi, 3.66519])  # upper joint limits
@@ -566,6 +569,54 @@ class hc20_spec(robot):
         if tcp is None:
             tcp = self.TCP
         return kinmodel_hc20(q, tcp=tcp, out=out)
+
+
+class hc30_spec(robot):
+    def __init__(self) -> None:
+        self.Name = "hc30"
+        self.nj = 6
+        self.TCPGripper = np.eye(4)
+        _TBase = np.eye(4)
+        _TBase[2, 3] = 0.38
+        self.TBase = _TBase
+        self.q_home = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])  # home joint configuration
+        self.q_init = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])  # init work joint configuration
+        self.q_max = np.array([np.pi, np.pi, 4.31096, 3.66519, 3*np.pi / 4, 3.66519])  # upper joint limits
+        self.q_min = np.array([-np.pi, -np.pi, -1.6937, -3.66519, -np.pi / 4, -3.66519])  # lower joint limits
+        self.qdot_max = np.array([0.2, 0.15, 0.2, 2.0, 0.8, 2.0])  # maximal joint velocities
+        self.v_max = np.array([0.25, 0.25, 0.25, 0.5, 0.5, 0.5])  # maximal task velocities
+        self.joint_names = [
+            "joint_1",
+            "joint_2",
+            "joint_3",
+            "joint_4",
+            "joint_5",
+            "joint_6",
+        ]
+
+    def Kinmodel(self, q: Optional[ArrayLike] = None, tcp: Optional[ArrayLike] = None, out: str = "x") -> Union[Tuple[Pose3DType, JacobianType], Tuple[HomogeneousMatrixType, JacobianType], Tuple[Vector3DType, RotationMatrixType, JacobianType]]:
+        """
+        Compute forward kinematics and Jacobian for the robot.
+
+        Parameters
+        ----------
+        q : ArrayLike, optional
+            Joint angles/positions. Uses the current joint state when None.
+        tcp : ArrayLike, optional
+            Tool center point transform or pose. Uses the current TCP when None.
+        out : str, optional
+            Output form (e.g., "x", "pR").
+
+        Returns
+        -------
+        tuple
+            Pose representation and JacobianType depending on `out`.
+        """
+        if q is None:
+            q = np.copy(self._actual.q)
+        if tcp is None:
+            tcp = self.TCP
+        return kinmodel_hc30(q, tcp=tcp, out=out)
 
 
 class z1_spec(robot):

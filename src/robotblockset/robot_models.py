@@ -373,7 +373,7 @@ def kinmodel_panda_reduced_pos(q: np.ndarray, out: str = "x") -> Union[Tuple[np.
     if out == "pR":
         return p, R, J
     else:
-        return rp2t(R=R, p=p, out=out), J
+        return map_pose(R=R, p=p, out=out), J
 
 
 def kinmodel_panda(q: np.ndarray, tcp: Optional[TCPType] = None, out: str = "x") -> list:
@@ -7149,20 +7149,22 @@ def kinmodel_crx20(q: np.ndarray, tcp: Optional[TCPType] = None, out: str = "x")
         return map_pose(R=R, p=p, out=out), J
 
 
-def kinmodel_hc20(q: np.ndarray, tcp: Optional[TCPType] = None, out: str = "x") -> list:
+def kinmodel_hc20(q: np.ndarray, tcp: np.ndarray = None, out: str = 'x')-> list:
     """
-    Compute forward kinematics and Jacobian for the Yaskawa HC20.
+    Compute forward kinematics and Jacobian for the HC20 URDF.
 
-    Parameters
+    
+    Parameters:
     ----------
     q : np.ndarray
         Joint angles/positions.
-    tcp : TCPType, optional
+    tcp : np.ndarray
         Tool centre point (optional).
-    out : str, optional
+    out : string
         Output form (optional).
 
-    Returns
+    
+    Returns:
     -------
     p : np.ndarray
         Position of the end effector.
@@ -7185,64 +7187,35 @@ def kinmodel_hc20(q: np.ndarray, tcp: Optional[TCPType] = None, out: str = "x") 
     c6 = np.cos(q[5])
     s6 = np.sin(q[5])
 
-    p1 = 0.380000
-    p2 = 0.820000
-    p3 = 0.880000
-    p4 = 0.200000
+    p1 = -0.380000
+    p2 = 0.380000
+    p3 = 0.820000
+    p4 = 0.880000
+    p5 = 0.200000
 
-    p = np.array(
-        [
-            p2 * s2 * c1 + p3 * (s2 * s3 * c1 + c1 * c2 * c3) + p4 * (((s2 * c1 * c3 - s3 * c1 * c2) * c4 - s1 * s4) * s5 + (s2 * s3 * c1 + c1 * c2 * c3) * c5),
-            p2 * s1 * s2 + p3 * (s1 * s2 * s3 + s1 * c2 * c3) + p4 * (((s1 * s2 * c3 - s1 * s3 * c2) * c4 + s4 * c1) * s5 + (s1 * s2 * s3 + s1 * c2 * c3) * c5),
-            p1 + p2 * c2 + p3 * (-s2 * c3 + s3 * c2) + p4 * ((s2 * s3 + c2 * c3) * s5 * c4 + (-s2 * c3 + s3 * c2) * c5),
-        ]
-    )
+    p = np.array([
+        p3*s2*c1 + p4*(s2*s3*c1 + c1*c2*c3) + p5*(((s2*c1*c3 - s3*c1*c2)*c4 - s1*s4)*s5 + (s2*s3*c1 + c1*c2*c3)*c5),
+        p3*s1*s2 + p4*(s1*s2*s3 + s1*c2*c3) + p5*(((s1*s2*c3 - s1*s3*c2)*c4 + s4*c1)*s5 + (s1*s2*s3 + s1*c2*c3)*c5),
+        p1 + p2 + p3*c2 + p4*(-s2*c3 + s3*c2) + p5*((s2*s3 + c2*c3)*s5*c4 + (-s2*c3 + s3*c2)*c5),
+    ])
 
-    R = np.array(
-        [
-            [
-                (((s2 * c1 * c3 - s3 * c1 * c2) * c4 - s1 * s4) * c5 - (s2 * s3 * c1 + c1 * c2 * c3) * s5) * c6 + (-(s2 * c1 * c3 - s3 * c1 * c2) * s4 - s1 * c4) * s6,
-                (((s2 * c1 * c3 - s3 * c1 * c2) * c4 - s1 * s4) * c5 - (s2 * s3 * c1 + c1 * c2 * c3) * s5) * s6 - (-(s2 * c1 * c3 - s3 * c1 * c2) * s4 - s1 * c4) * c6,
-                ((s2 * c1 * c3 - s3 * c1 * c2) * c4 - s1 * s4) * s5 + (s2 * s3 * c1 + c1 * c2 * c3) * c5,
-            ],
-            [
-                (((s1 * s2 * c3 - s1 * s3 * c2) * c4 + s4 * c1) * c5 - (s1 * s2 * s3 + s1 * c2 * c3) * s5) * c6 + (-(s1 * s2 * c3 - s1 * s3 * c2) * s4 + c1 * c4) * s6,
-                (((s1 * s2 * c3 - s1 * s3 * c2) * c4 + s4 * c1) * c5 - (s1 * s2 * s3 + s1 * c2 * c3) * s5) * s6 - (-(s1 * s2 * c3 - s1 * s3 * c2) * s4 + c1 * c4) * c6,
-                ((s1 * s2 * c3 - s1 * s3 * c2) * c4 + s4 * c1) * s5 + (s1 * s2 * s3 + s1 * c2 * c3) * c5,
-            ],
-            [-(s2 * s3 + c2 * c3) * s4 * s6 + ((s2 * s3 + c2 * c3) * c4 * c5 - (-s2 * c3 + s3 * c2) * s5) * c6, (s2 * s3 + c2 * c3) * s4 * c6 + ((s2 * s3 + c2 * c3) * c4 * c5 - (-s2 * c3 + s3 * c2) * s5) * s6, (s2 * s3 + c2 * c3) * s5 * c4 + (-s2 * c3 + s3 * c2) * c5],
-        ]
-    )
+    R = np.array([
+        [(((s2*c1*c3 - s3*c1*c2)*c4 - s1*s4)*c5 - (s2*s3*c1 + c1*c2*c3)*s5)*c6 + (-(s2*c1*c3 - s3*c1*c2)*s4 - s1*c4)*s6, (((s2*c1*c3 - s3*c1*c2)*c4 - s1*s4)*c5 - (s2*s3*c1 + c1*c2*c3)*s5)*s6 - (-(s2*c1*c3 - s3*c1*c2)*s4 - s1*c4)*c6, ((s2*c1*c3 - s3*c1*c2)*c4 - s1*s4)*s5 + (s2*s3*c1 + c1*c2*c3)*c5],
+        [(((s1*s2*c3 - s1*s3*c2)*c4 + s4*c1)*c5 - (s1*s2*s3 + s1*c2*c3)*s5)*c6 + (-(s1*s2*c3 - s1*s3*c2)*s4 + c1*c4)*s6, (((s1*s2*c3 - s1*s3*c2)*c4 + s4*c1)*c5 - (s1*s2*s3 + s1*c2*c3)*s5)*s6 - (-(s1*s2*c3 - s1*s3*c2)*s4 + c1*c4)*c6, ((s1*s2*c3 - s1*s3*c2)*c4 + s4*c1)*s5 + (s1*s2*s3 + s1*c2*c3)*c5],
+        [-(s2*s3 + c2*c3)*s4*s6 + ((s2*s3 + c2*c3)*c4*c5 - (-s2*c3 + s3*c2)*s5)*c6, (s2*s3 + c2*c3)*s4*c6 + ((s2*s3 + c2*c3)*c4*c5 - (-s2*c3 + s3*c2)*s5)*s6, (s2*s3 + c2*c3)*s5*c4 + (-s2*c3 + s3*c2)*c5],
+    ])
 
-    Jp = np.array(
-        [
-            [
-                -p2 * s1 * s2 + p3 * (-s1 * s2 * s3 - s1 * c2 * c3) + p4 * (((-s1 * s2 * c3 + s1 * s3 * c2) * c4 - s4 * c1) * s5 + (-s1 * s2 * s3 - s1 * c2 * c3) * c5),
-                p2 * c1 * c2 + p3 * (-s2 * c1 * c3 + s3 * c1 * c2) + p4 * ((s2 * s3 * c1 + c1 * c2 * c3) * s5 * c4 + (-s2 * c1 * c3 + s3 * c1 * c2) * c5),
-                p3 * (s2 * c1 * c3 - s3 * c1 * c2) + p4 * ((-s2 * s3 * c1 - c1 * c2 * c3) * s5 * c4 + (s2 * c1 * c3 - s3 * c1 * c2) * c5),
-                p4 * (-(s2 * c1 * c3 - s3 * c1 * c2) * s4 - s1 * c4) * s5,
-                p4 * (((s2 * c1 * c3 - s3 * c1 * c2) * c4 - s1 * s4) * c5 - (s2 * s3 * c1 + c1 * c2 * c3) * s5),
-                0,
-            ],
-            [
-                p2 * s2 * c1 + p3 * (s2 * s3 * c1 + c1 * c2 * c3) + p4 * (((s2 * c1 * c3 - s3 * c1 * c2) * c4 - s1 * s4) * s5 + (s2 * s3 * c1 + c1 * c2 * c3) * c5),
-                p2 * s1 * c2 + p3 * (-s1 * s2 * c3 + s1 * s3 * c2) + p4 * ((s1 * s2 * s3 + s1 * c2 * c3) * s5 * c4 + (-s1 * s2 * c3 + s1 * s3 * c2) * c5),
-                p3 * (s1 * s2 * c3 - s1 * s3 * c2) + p4 * ((-s1 * s2 * s3 - s1 * c2 * c3) * s5 * c4 + (s1 * s2 * c3 - s1 * s3 * c2) * c5),
-                p4 * (-(s1 * s2 * c3 - s1 * s3 * c2) * s4 + c1 * c4) * s5,
-                p4 * (((s1 * s2 * c3 - s1 * s3 * c2) * c4 + s4 * c1) * c5 - (s1 * s2 * s3 + s1 * c2 * c3) * s5),
-                0,
-            ],
-            [0, -p2 * s2 + p3 * (-s2 * s3 - c2 * c3) + p4 * ((-s2 * s3 - c2 * c3) * c5 + (-s2 * c3 + s3 * c2) * s5 * c4), p3 * (s2 * s3 + c2 * c3) + p4 * ((s2 * s3 + c2 * c3) * c5 + (s2 * c3 - s3 * c2) * s5 * c4), -p4 * (s2 * s3 + c2 * c3) * s4 * s5, p4 * ((s2 * s3 + c2 * c3) * c4 * c5 - (-s2 * c3 + s3 * c2) * s5), 0],
-        ]
-    )
+    Jp = np.array([
+        [-p3*s1*s2 + p4*(-s1*s2*s3 - s1*c2*c3) + p5*(((-s1*s2*c3 + s1*s3*c2)*c4 - s4*c1)*s5 + (-s1*s2*s3 - s1*c2*c3)*c5), p3*c1*c2 + p4*(-s2*c1*c3 + s3*c1*c2) + p5*((s2*s3*c1 + c1*c2*c3)*s5*c4 + (-s2*c1*c3 + s3*c1*c2)*c5), p4*(s2*c1*c3 - s3*c1*c2) + p5*((-s2*s3*c1 - c1*c2*c3)*s5*c4 + (s2*c1*c3 - s3*c1*c2)*c5), p5*(-(s2*c1*c3 - s3*c1*c2)*s4 - s1*c4)*s5, p5*(((s2*c1*c3 - s3*c1*c2)*c4 - s1*s4)*c5 - (s2*s3*c1 + c1*c2*c3)*s5), 0],
+        [p3*s2*c1 + p4*(s2*s3*c1 + c1*c2*c3) + p5*(((s2*c1*c3 - s3*c1*c2)*c4 - s1*s4)*s5 + (s2*s3*c1 + c1*c2*c3)*c5), p3*s1*c2 + p4*(-s1*s2*c3 + s1*s3*c2) + p5*((s1*s2*s3 + s1*c2*c3)*s5*c4 + (-s1*s2*c3 + s1*s3*c2)*c5), p4*(s1*s2*c3 - s1*s3*c2) + p5*((-s1*s2*s3 - s1*c2*c3)*s5*c4 + (s1*s2*c3 - s1*s3*c2)*c5), p5*(-(s1*s2*c3 - s1*s3*c2)*s4 + c1*c4)*s5, p5*(((s1*s2*c3 - s1*s3*c2)*c4 + s4*c1)*c5 - (s1*s2*s3 + s1*c2*c3)*s5), 0],
+        [0, -p3*s2 + p4*(-s2*s3 - c2*c3) + p5*((-s2*s3 - c2*c3)*c5 + (-s2*c3 + s3*c2)*s5*c4), p4*(s2*s3 + c2*c3) + p5*((s2*s3 + c2*c3)*c5 + (s2*c3 - s3*c2)*s5*c4), -p5*(s2*s3 + c2*c3)*s4*s5, p5*((s2*s3 + c2*c3)*c4*c5 - (-s2*c3 + s3*c2)*s5), 0],
+    ])
 
-    Jr = np.array(
-        [
-            [0, -s1, s1, -s2 * s3 * c1 - c1 * c2 * c3, (s2 * c1 * c3 - s3 * c1 * c2) * s4 + s1 * c4, -((s2 * c1 * c3 - s3 * c1 * c2) * c4 - s1 * s4) * s5 - (s2 * s3 * c1 + c1 * c2 * c3) * c5],
-            [0, c1, -c1, -s1 * s2 * s3 - s1 * c2 * c3, (s1 * s2 * c3 - s1 * s3 * c2) * s4 - c1 * c4, -((s1 * s2 * c3 - s1 * s3 * c2) * c4 + s4 * c1) * s5 - (s1 * s2 * s3 + s1 * c2 * c3) * c5],
-            [1, 0, 0, s2 * c3 - s3 * c2, (s2 * s3 + c2 * c3) * s4, -(s2 * s3 + c2 * c3) * s5 * c4 - (-s2 * c3 + s3 * c2) * c5],
-        ]
-    )
+    Jr = np.array([
+        [0, -s1, s1, -s2*s3*c1 - c1*c2*c3, (s2*c1*c3 - s3*c1*c2)*s4 + s1*c4, -((s2*c1*c3 - s3*c1*c2)*c4 - s1*s4)*s5 - (s2*s3*c1 + c1*c2*c3)*c5],
+        [0, c1, -c1, -s1*s2*s3 - s1*c2*c3, (s1*s2*c3 - s1*s3*c2)*s4 - c1*c4, -((s1*s2*c3 - s1*s3*c2)*c4 + s4*c1)*s5 - (s1*s2*s3 + s1*c2*c3)*c5],
+        [1, 0, 0, s2*c3 - s3*c2, (s2*s3 + c2*c3)*s4, -(s2*s3 + c2*c3)*s5*c4 - (-s2*c3 + s3*c2)*c5],
+    ])
 
     if tcp is not None:
         tcp = np.array(tcp)
@@ -7254,21 +7227,125 @@ def kinmodel_hc20(q: np.ndarray, tcp: Optional[TCPType] = None, out: str = "x") 
             R_tcp = np.eye(3)
         elif tcp.shape[0] == 7:
             p_tcp = tcp[:3]
-            R_tcp = map_pose(Q=tcp[3:7], out="R")
+            R_tcp = map_pose(Q=tcp[3:7], out='R')
         elif tcp.shape[0] == 6:
             p_tcp = tcp[:3]
-            R_tcp = map_pose(RPY=tcp[3:6], out="R")
+            R_tcp = map_pose(RPY=tcp[3:6], out='R')
         else:
-            raise ValueError("kinmodel: tcp is not SE3")
+            raise ValueError('kinmodel: tcp is not SE3')
         v = R @ p_tcp
-        s = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
+        s = np.array([
+            [0, -v[2], v[1]],
+            [v[2], 0, -v[0]],
+            [-v[1], v[0], 0]])
         p = p + R @ p_tcp
         Jp = Jp + s.T @ Jr
         R = R @ R_tcp
 
     J = np.vstack((Jp, Jr))
 
-    if out == "pR":
+    if out=='pR':
+        return p, R, J
+    else:
+        return map_pose(R=R, p=p, out=out), J
+
+
+def kinmodel_hc30(q: np.ndarray, tcp: np.ndarray = None, out: str = 'x')-> list:
+    """
+    Compute forward kinematics and Jacobian for the HC30 URDF.
+
+    
+    Parameters:
+    ----------
+    q : np.ndarray
+        Joint angles/positions.
+    tcp : np.ndarray
+        Tool centre point (optional).
+    out : string
+        Output form (optional).
+
+    
+    Returns:
+    -------
+    p : np.ndarray
+        Position of the end effector.
+    R : np.ndarray
+        Rotation matrix of the end effector (3, 3).
+    J : np.ndarray
+        Jacobian matrix (6, nj).
+    """
+
+    c1 = np.cos(q[0])
+    s1 = np.sin(q[0])
+    c2 = np.cos(q[1])
+    s2 = np.sin(q[1])
+    c3 = np.cos(q[2])
+    s3 = np.sin(q[2])
+    c4 = np.cos(q[3])
+    s4 = np.sin(q[3])
+    c5 = np.cos(q[4])
+    s5 = np.sin(q[4])
+    c6 = np.cos(q[5])
+    s6 = np.sin(q[5])
+
+    p1 = -0.380000
+    p2 = 0.380000
+    p3 = 0.820000
+    p4 = 0.880000
+    p5 = 0.200000
+
+    p = np.array([
+        p3*s2*c1 + p4*(s2*s3*c1 + c1*c2*c3) + p5*(-((s2*c1*c3 - s3*c1*c2)*c4 - s1*s4)*c5 + (s2*s3*c1 + c1*c2*c3)*s5),
+        p3*s1*s2 + p4*(s1*s2*s3 + s1*c2*c3) + p5*(-((s1*s2*c3 - s1*s3*c2)*c4 + s4*c1)*c5 + (s1*s2*s3 + s1*c2*c3)*s5),
+        p1 + p2 + p3*c2 + p4*(-s2*c3 + s3*c2) + p5*(-(s2*s3 + c2*c3)*c4*c5 + (-s2*c3 + s3*c2)*s5),
+    ])
+
+    R = np.array([
+        [(((s2*c1*c3 - s3*c1*c2)*c4 - s1*s4)*s5 + (s2*s3*c1 + c1*c2*c3)*c5)*c6 + (-(s2*c1*c3 - s3*c1*c2)*s4 - s1*c4)*s6, (((s2*c1*c3 - s3*c1*c2)*c4 - s1*s4)*s5 + (s2*s3*c1 + c1*c2*c3)*c5)*s6 - (-(s2*c1*c3 - s3*c1*c2)*s4 - s1*c4)*c6, -((s2*c1*c3 - s3*c1*c2)*c4 - s1*s4)*c5 + (s2*s3*c1 + c1*c2*c3)*s5],
+        [(((s1*s2*c3 - s1*s3*c2)*c4 + s4*c1)*s5 + (s1*s2*s3 + s1*c2*c3)*c5)*c6 + (-(s1*s2*c3 - s1*s3*c2)*s4 + c1*c4)*s6, (((s1*s2*c3 - s1*s3*c2)*c4 + s4*c1)*s5 + (s1*s2*s3 + s1*c2*c3)*c5)*s6 - (-(s1*s2*c3 - s1*s3*c2)*s4 + c1*c4)*c6, -((s1*s2*c3 - s1*s3*c2)*c4 + s4*c1)*c5 + (s1*s2*s3 + s1*c2*c3)*s5],
+        [-(s2*s3 + c2*c3)*s4*s6 + ((s2*s3 + c2*c3)*s5*c4 + (-s2*c3 + s3*c2)*c5)*c6, (s2*s3 + c2*c3)*s4*c6 + ((s2*s3 + c2*c3)*s5*c4 + (-s2*c3 + s3*c2)*c5)*s6, -(s2*s3 + c2*c3)*c4*c5 + (-s2*c3 + s3*c2)*s5],
+    ])
+
+    Jp = np.array([
+        [-p3*s1*s2 + p4*(-s1*s2*s3 - s1*c2*c3) + p5*(-((-s1*s2*c3 + s1*s3*c2)*c4 - s4*c1)*c5 + (-s1*s2*s3 - s1*c2*c3)*s5), p3*c1*c2 + p4*(-s2*c1*c3 + s3*c1*c2) + p5*(-(s2*s3*c1 + c1*c2*c3)*c4*c5 + (-s2*c1*c3 + s3*c1*c2)*s5), p4*(s2*c1*c3 - s3*c1*c2) + p5*(-(-s2*s3*c1 - c1*c2*c3)*c4*c5 + (s2*c1*c3 - s3*c1*c2)*s5), -p5*(-(s2*c1*c3 - s3*c1*c2)*s4 - s1*c4)*c5, p5*(((s2*c1*c3 - s3*c1*c2)*c4 - s1*s4)*s5 + (s2*s3*c1 + c1*c2*c3)*c5), 0],
+        [p3*s2*c1 + p4*(s2*s3*c1 + c1*c2*c3) + p5*(-((s2*c1*c3 - s3*c1*c2)*c4 - s1*s4)*c5 + (s2*s3*c1 + c1*c2*c3)*s5), p3*s1*c2 + p4*(-s1*s2*c3 + s1*s3*c2) + p5*(-(s1*s2*s3 + s1*c2*c3)*c4*c5 + (-s1*s2*c3 + s1*s3*c2)*s5), p4*(s1*s2*c3 - s1*s3*c2) + p5*(-(-s1*s2*s3 - s1*c2*c3)*c4*c5 + (s1*s2*c3 - s1*s3*c2)*s5), -p5*(-(s1*s2*c3 - s1*s3*c2)*s4 + c1*c4)*c5, p5*(((s1*s2*c3 - s1*s3*c2)*c4 + s4*c1)*s5 + (s1*s2*s3 + s1*c2*c3)*c5), 0],
+        [0, -p3*s2 + p4*(-s2*s3 - c2*c3) + p5*((-s2*s3 - c2*c3)*s5 - (-s2*c3 + s3*c2)*c4*c5), p4*(s2*s3 + c2*c3) + p5*((s2*s3 + c2*c3)*s5 - (s2*c3 - s3*c2)*c4*c5), p5*(s2*s3 + c2*c3)*s4*c5, p5*((s2*s3 + c2*c3)*s5*c4 + (-s2*c3 + s3*c2)*c5), 0],
+    ])
+
+    Jr = np.array([
+        [0, -s1, s1, -s2*s3*c1 - c1*c2*c3, (s2*c1*c3 - s3*c1*c2)*s4 + s1*c4, ((s2*c1*c3 - s3*c1*c2)*c4 - s1*s4)*c5 - (s2*s3*c1 + c1*c2*c3)*s5],
+        [0, c1, -c1, -s1*s2*s3 - s1*c2*c3, (s1*s2*c3 - s1*s3*c2)*s4 - c1*c4, ((s1*s2*c3 - s1*s3*c2)*c4 + s4*c1)*c5 - (s1*s2*s3 + s1*c2*c3)*s5],
+        [1, 0, 0, s2*c3 - s3*c2, (s2*s3 + c2*c3)*s4, (s2*s3 + c2*c3)*c4*c5 - (-s2*c3 + s3*c2)*s5],
+    ])
+
+    if tcp is not None:
+        tcp = np.array(tcp)
+        if tcp.shape == (4, 4):
+            p_tcp = tcp[:3, 3]
+            R_tcp = tcp[:3, :3]
+        elif tcp.shape[0] == 3:
+            p_tcp = tcp[:3]
+            R_tcp = np.eye(3)
+        elif tcp.shape[0] == 7:
+            p_tcp = tcp[:3]
+            R_tcp = map_pose(Q=tcp[3:7], out='R')
+        elif tcp.shape[0] == 6:
+            p_tcp = tcp[:3]
+            R_tcp = map_pose(RPY=tcp[3:6], out='R')
+        else:
+            raise ValueError('kinmodel: tcp is not SE3')
+        v = R @ p_tcp
+        s = np.array([
+            [0, -v[2], v[1]],
+            [v[2], 0, -v[0]],
+            [-v[1], v[0], 0]])
+        p = p + R @ p_tcp
+        Jp = Jp + s.T @ Jr
+        R = R @ R_tcp
+
+    J = np.vstack((Jp, Jr))
+
+    if out=='pR':
         return p, R, J
     else:
         return map_pose(R=R, p=p, out=out), J

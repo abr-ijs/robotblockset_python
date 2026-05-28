@@ -446,7 +446,7 @@ class _default(_struct):
     RotDirShort : bool
         Whether the rotation direction is short or not.
     Traj : str
-        The trajectory type used for robot movement, "poly", "trap" or "line".
+        The trajectory type used for robot movement, "Jerk", "Poly", "Trap" or "Line".
     TaskDOF : np.ndarray
         The degrees of freedom of the task, represented as an array of 1's and 0's of length 6.
     VelocityScaling : float
@@ -487,12 +487,16 @@ class _default(_struct):
         The maximum joint acceleration for the joint motion.
     JointDeceleration : float
         The maximum joint deceleration for stopping the joint motion.
+    JointJerk : float
+        The maximum joint jerk for the joint motion.
     TaskVelocity : float
         The maximum task velocity for the Cartesian motion.
     TaskAcceleration : float
         The maximum task acceleration for the Cartesian motion.
     TaskDeceleration : float
         The maximum task deceleration for stopping the Cartesian motion.
+    TaskJerk : float
+        The maximum task jerk for the Cartesian motion.
     """
 
     def __init__(self) -> None:
@@ -518,7 +522,7 @@ class _default(_struct):
         self.UseInternal: bool = False
         self.DampedPseudoInverseFactor: float = 0.0
         self.RotDirShort: bool = True
-        self.Traj: str = "poly"
+        self.Traj: str = "Jerk"
         self.TaskDOF: np.ndarray = np.ones(6)
         self.VelocityScaling: float = 0.25  # Scale factor for velocity
         self.MinJointDist: float = 0
@@ -537,11 +541,13 @@ class _default(_struct):
         self.UpdateTime: float = 1.0
         self.TrajSampTimeFac: float = 5
         self.JointVelocity: float = 1.0
-        self.JointAcceleration: float = 2.0
-        self.JointDeceleration: float = 2.0
+        self.JointAcceleration: float = 5.0
+        self.JointDeceleration: float = 5.0
+        self.JointJerk: float = 10.0
         self.TaskVelocity: float = 0.25
-        self.TaskAcceleration: float = 1
-        self.TaskDeceleration: float = 10
+        self.TaskAcceleration: float = 5
+        self.TaskDeceleration: float = 5
+        self.TaskJerk: float = 10.0
 
 
 class robot(rbs_object):
@@ -602,7 +608,8 @@ class robot(rbs_object):
         self.Name: str = "Robot"
         self.tsamp: float = 0.01  # Sampling rate for the robot
         self.TCP: np.ndarray = np.eye(4)  # Tool Center Point transformation matrix
-        self.TBase: np.ndarray = np.eye(4)  # Robot base transformation matrix
+        if not hasattr(self, "TBase"):
+            self.TBase: np.ndarray = np.eye(4)  # Robot base transformation matrix
         self.vBase: np.ndarray = np.zeros(6)  # Robot base velocity
         self.TObject: np.ndarray = np.eye(4)  # Object transformation matrix
         if not hasattr(self, "TCPGripper"):
@@ -2492,20 +2499,34 @@ class robot(rbs_object):
                 else:
                     _vel = vector(vel, dim=self.nj)
                 self.Message(f"JMove started: {q} with velocity {np.max(_vel):.1f}rd/s", 2)
-            _vel = np.clip(_vel, 0, self.qdot_max)
+            _vel = np.clip(np.abs(_vel), 0, self.qdot_max)
         else:
             _time = np.arange(0.0, t + self.tsamp, self.tsamp)
             _vel = self.qdot_max
             self.Message(f"JMove started to: {q} in {_time[-1]:.1f}s", 2)
 
         q0 = self.GetJointPos(state="Commanded")
-        qi, qdoti, _ = jtraj(q0, q, _time, traj=traj)
-        _fac = np.max(np.max(np.abs(qdoti), axis=0) / _vel)
-        if (_fac > 1) or (t is None):
-            _tend = max(_time[-1] * _fac, 0.5) + self.tsamp
-            self.Message(f"Execution time will be prolonged due to bounded joint velocities form {_time[-1]:.1f}s to {_tend:.1f}s.", 2)
-            _time = np.arange(0.0, _tend, self.tsamp)
+        if check_option(traj, "Jerk"):
+            qd_max = kwargs.get('qd_max', _vel)
+            qdd_max = kwargs.get('qdd_max', self._default.JointAcceleration)
+            jerk_max = kwargs.get('jerk_max', self._default.JointJerk)
+            if t is None:    
+                qi, qdoti, _ = jtraj(q0, q, [0, self.tsamp], traj=traj, qd_max=qd_max, qdd_max=qdd_max, jerk_max=jerk_max)
+                _time =np.arange(qi.shape[0]) * self.tsamp
+            else:
+                qi, qdoti, _ = jtraj(q0, q, _time, traj=traj, qd_max=qd_max, qdd_max=qdd_max, jerk_max=jerk_max)
+                if qi.shape[0] > _time.shape[0]:
+                    _time =np.arange(qi.shape[0]) * self.tsamp
+                    if t < _time[-1]:
+                        self.Message(f"Execution time will be prolonged due to bounded joint velocities or accelerations form {t:.1f}s to {_time[-1]:.1f}s.", 2)
+        else:
             qi, qdoti, _ = jtraj(q0, q, _time, traj=traj)
+            _fac = np.max(np.max(np.abs(qdoti), axis=0) / _vel)
+            if (_fac > 1) or (t is None):
+                _tend = max(_time[-1] * _fac, 0.5) + self.tsamp
+                self.Message(f"Execution time will be prolonged due to bounded joint velocities form {_time[-1]:.1f}s to {_tend:.1f}s.", 2)
+                _time = np.arange(0.0, _tend, self.tsamp)
+                qi, qdoti, _ = jtraj(q0, q, _time, traj=traj)
 
         if not self._semaphore.acquire(blocking=False):
             self.WarningMessage("JMove not executed due to active threads!")
@@ -4081,7 +4102,7 @@ class robot(rbs_object):
                 else:
                     _vel = vector(vel, dim=6)
                     self.Message(f"CMove started: {rx} in {task_space} space with velocity {100 * np.max(_vel / self.v_max):.1f}%", 2)
-            _vel = np.clip(_vel, 0, self.v_max)
+            _vel = np.clip(np.abs(_vel), 0, self.v_max)
             _vel[np.where(_vel < 1e-3)[0]] = np.inf
         else:
             _time = np.arange(0.0, t + self.tsamp, self.tsamp)
@@ -4089,13 +4110,27 @@ class robot(rbs_object):
             self.Message(f"CMove started: {rx} in {task_space} space in {_time[-1]:.1f}s", 2)
 
         x0 = self.GetPose(state=state, task_space=task_space, kinematics=kwargs["kinematics"])
-        xi, vi, _ = ctraj(x0, rx, _time, traj=traj, short=short)
-        _fac = np.max(np.max(np.abs(vi), axis=0) / _vel)
-        if (_fac > 1) or (t is None):
-            _tend = max(_time[-1] * _fac, 0.5) + self.tsamp
-            self.Message(f"Execution time will be prolonged due to bounded task velocities form {_time[-1]:.1f}s to {_tend:.1f}s.", 2)
-            _time = np.arange(0.0, _tend, self.tsamp)
+        if check_option(traj, "Jerk"):
+            v_max = kwargs.get('v_max', _vel)
+            a_max = kwargs.get('a_max', self._default.TaskAcceleration)
+            jerk_max = kwargs.get('jerk_max', self._default.TaskJerk)
+            if t is None:
+                xi, vi, _ = ctraj(x0, rx, [0, self.tsamp], traj=traj, short=short, v_max=v_max, a_max=a_max, jerk_max=jerk_max)
+                _time = np.arange(xi.shape[0]) * self.tsamp
+            else:
+                xi, vi, _ = ctraj(x0, rx, _time, traj=traj, short=short, v_max=v_max, a_max=a_max, jerk_max=jerk_max)
+                if xi.shape[0] > _time.shape[0]:
+                    _time = np.arange(xi.shape[0]) * self.tsamp
+                    self.Message(f"Execution time will be prolonged due to bounded task velocities or accelerations from {t:.1f}s to {_time[-1]:.1f}s.", 2)
+        else:
             xi, vi, _ = ctraj(x0, rx, _time, traj=traj, short=short)
+            _fac = np.max(np.max(np.abs(vi), axis=0) / _vel)
+            if (_fac > 1) or (t is None):
+                _tend = max(_time[-1] * _fac, 0.5) + self.tsamp
+                if _tend > _time[-1]:
+                    self.Message(f"Execution time will be prolonged due to bounded task velocities form {_time[-1]:.1f}s to {_tend:.1f}s.", 2)
+                _time = np.arange(0.0, _tend, self.tsamp)
+                xi, vi, _ = ctraj(x0, rx, _time, traj=traj, short=short)
 
         if not self._semaphore.acquire(blocking=False):
             self.WarningMessage("CMove not executed due to active threads!")
@@ -4575,7 +4610,7 @@ class robot(rbs_object):
                     _vel = np.concatenate((vel[0] * np.ones(3), vel[1] * np.ones(3)))
                 else:
                     _vel = vector(vel, dim=6)
-            _vel = np.clip(_vel, 0, self.v_max)
+            _vel = np.clip(np.abs(_vel), 0, self.v_max)
             self.Message(f"CArc started: {rx}/{rpC} in {task_space} with velocity {100 * np.max(_vel / self.v_max):.1f}%", 2)
         else:
             _time = np.arange(0.0, t + self.tsamp, self.tsamp)
@@ -5690,6 +5725,46 @@ class robot(rbs_object):
             Additional arguments passed to the method.
         """
         raise NotImplementedError("Compliance not supported")
+
+    def SoftSetCartesianStiffness(self, stiffness: ArrayLike, t: float, dt: float = None, **kwargs: Any) -> None:
+        """
+        Smoothly ramp Cartesian stiffness/compliance over ``t`` seconds.
+
+        Interpolates from current Cartesian stiffness to target ``stiffness`` in ``N`` steps,
+        where ``N = max(1, round(t / dt))``. If ``dt`` is not specified, ``self.tsamp`` is used.
+
+        Parameters
+        ----------
+        stiffness : ArrayLike
+            Target Cartesian stiffness (skalar, 2D ali 6D vektor).
+        t : float
+            Desired ramp duration in seconds.
+        dt : float, optional
+            Step duration (če None, uporabi self.tsamp).
+        **kwargs : Any
+            Dodatni argumenti za SetCartesianStiffness.
+        """
+        if not isscalar(t) or t < 0:
+            raise ValueError("Time must be a non-negative scalar")
+        if dt is None:
+            dt = self.tsamp
+        # Expand target stiffness to 6D
+        if isscalar(stiffness):
+            stiffness_target = np.ones(6) * float(stiffness)
+        elif isvector(stiffness, dim=2):
+            # 2D: [trans, rot] -> [trans, trans, trans, rot, rot, rot]
+            stiffness_target = np.hstack([np.ones(3) * float(stiffness[0]), np.ones(3) * float(stiffness[1])])
+        else:
+            stiffness_target = vector(stiffness, dim=6)
+
+        stiffness_now = vector(self.GetCartesianStiffness(), dim=6)
+        N = max(1, int(np.round(t / dt)))
+        d_stiff = (stiffness_target - stiffness_now) / N
+        for i in range(N):
+            stiffness_now = stiffness_now + d_stiff
+            self.SetCartesianStiffness(stiffness_now, **kwargs)
+            if i < N - 1 and t > 0:
+                sleep(dt)
 
     def SetCartesianStiff(self) -> None:
         """
@@ -7153,8 +7228,8 @@ class robot(rbs_object):
 
         self.TCP = newTCP
         rx, rJ = self.Kinmodel(self._command.q)
-        self._command.x = self.BaseToWorld(rx)
-        self._command.v = self.BaseToWorld(rJ @ self._command.qdot, typ="Twist")
+        self._command.x = rx
+        self._command.v = rJ @ self._command.qdot
 
     def GetTCP(self, out: str = "T") -> Union[Pose3DType, HomogeneousMatrixType, Vector3DType, QuaternionType, RotationMatrixType]:
         """
@@ -7413,7 +7488,7 @@ class robot(rbs_object):
             self._abort = False
         else:
             self._abort = True
-            self.WarningMessage("Not started due to inactive scene!")
+            self.WarningMessage("Not started due to inactive robot!")
             return False
 
         self._command.mode = CommandModeCodes.START.value

@@ -74,44 +74,49 @@
       <site pos="0 0 0.05" size="0.002 0.05" group="4" type="cylinder" rgba="0 0 1 1"/>
       <site name="Target" pos="0 0 0" size="0.01" group="1" rgba="1 0.5 1 0.5"/>
     </body>
-    <body name="hc20" childclass="hc20_robot" mocap="true">
-      <geom class="hc20_visual" material="hc20_white" mesh="hc20_base_link"/>
-      <geom class="hc20_collision" mesh="hc20_base_link_c"/>
-      <body name="hc20_link1" pos="0 0 0.38">
-        <joint name="hc20_joint1" pos="0 0 0" axis="0 0 1" actuatorfrcrange="-917.28 917.28"/>
-        <geom class="hc20_visual" material="hc20_white" mesh="hc20_link_1_s"/>
-        <geom class="hc20_collision" mesh="hc20_link_1_s_c"/>
-        <body name="hc20_link2">
-          <joint name="hc20_joint2" pos="0 0 0" axis="0 1 0" actuatorfrcrange="-1223.04 1223.04"/>
-          <geom class="hc20_visual" material="hc20_white" mesh="hc20_link_2_l"/>
-          <geom class="hc20_collision" mesh="hc20_link_2_l_c"/>
-          <body name="hc20_link3" pos="0 0 0.82">
-            <joint name="hc20_joint3" pos="0 0 0" axis="0 -1 0" range="-1.16937 4.31096" actuatorfrcrange="-642.88 642.88"/>
-            <geom class="hc20_visual" material="hc20_white" mesh="hc20_link_3_u"/>
-            <geom class="hc20_collision" mesh="hc20_link_3_u_c"/>
-            <body name="hc20_link4" pos="0.88 0 0">
-              <joint name="hc20_joint4" pos="0 0 0" axis="-1 0 0" range="-3.66519 3.66519" actuatorfrcrange="-368.48 368.48"/>
-              <geom class="hc20_visual" material="hc20_white" mesh="hc20_link_4_r"/>
-              <geom class="hc20_collision" mesh="hc20_link_4_r_c"/>
-              <body name="hc20_link5">
-                <joint name="hc20_joint5" pos="0 0 0" axis="0 -1 0" actuatorfrcrange="-141.12 141.12"/>
-                <geom class="hc20_visual" material="hc20_white" mesh="hc20_link_5_b"/>
-                <geom class="hc20_collision" mesh="hc20_link_5_b_c"/>
-                <body name="hc20_link6">
-                  <joint name="hc20_joint6" pos="0 0 0" axis="-1 0 0" range="-3.66519 3.66519" actuatorfrcrange="-141.12 141.12"/>
-                  <geom class="hc20_visual" material="hc20_white" mesh="hc20_link_6_t"/>
-                  <geom class="hc20_collision" mesh="hc20_link_6_t_c"/>
-                  <body name="hc20_flange" pos="0.2 0 0" quat="0.707105 0 0.707108 0">
-                    <site pos="0.125 0 0" quat="0.707107 0 0.707107 0" size="0.005 0.125" group="3" type="cylinder" rgba="1 0 0 1"/>
-                    <site pos="0 0.125 0" quat="0.707107 0.707107 0 0" size="0.005 0.125" group="3" type="cylinder" rgba="0 1 0 1"/>
-                    <site pos="0 0 0.125" size="0.005 0.125" group="3" type="cylinder" rgba="0 0 1 1"/>
-                    <site name="hc20_flange" pos="0 0 0" quat="1.32679e-06 0 0 1" group="3"/>
-                    <body name="hc20_TCP" quat="1.32679e-06 0 0 1">
-                      <site pos="0.0625 0 0" quat="0.707107 0 0.707107 0" size="0.005 0.0625" group="4" type="cylinder" rgba="1 0 0 1"/>
-                      <site pos="0 0.0625 0" quat="0.707107 0.707107 0 0" size="0.005 0.0625" group="4" type="cylinder" rgba="0 1 0 1"/>
-                      <site pos="0 0 0.0626" size="0.005 0.0625" group="4" type="cylinder" rgba="0 0 1 1"/>
-                      <site name="hc20_TCP" pos="0 0 0" size="0.008" group="4"/>
-                      <camera name="hc20_Robot" pos="0.1 0 0" quat="0 1 0 0"/>
+    <body name="hc20_base" childclass="hc20_robot" mocap="true">
+      <body name="hc20" pos="0 0 0.38">
+        <site name="x" group="1" pos="0.25 0 0" quat="0.707107 0 0.707107 0" size="0.01 0.25" type="cylinder" rgba="1 0 0 1"/>
+        <site name="y" group="1" pos="0 0.25 0" quat="0.707107 0.707107 0 0" size="0.01 0.25" type="cylinder" rgba="0 1 0 1"/>
+        <site name="z" group="1" pos="0 0 0.25" size="0.01 0.25" type="cylinder" rgba="0 0 1 1"/>
+        <geom class="hc20_visual" pos="0 0 -0.38" material="hc20_white" mesh="hc20_base_link"/>
+        <geom class="hc20_collision" mesh="hc20_base_link_c"/>
+        <body name="hc20_link1">
+          <joint name="hc20_joint1" pos="0 0 0" axis="0 0 1" actuatorfrcrange="-917.28 917.28"/>
+          <geom class="hc20_visual" material="hc20_white" mesh="hc20_link_1_s"/>
+          <geom class="hc20_collision" mesh="hc20_link_1_s_c"/>
+          <body name="hc20_link2">
+            <joint name="hc20_joint2" pos="0 0 0" axis="0 1 0" actuatorfrcrange="-1223.04 1223.04"/>
+            <geom class="hc20_visual" material="hc20_white" mesh="hc20_link_2_l"/>
+            <geom class="hc20_collision" mesh="hc20_link_2_l_c"/>
+            <body name="hc20_link3" pos="0 0 0.82">
+              <joint name="hc20_joint3" pos="0 0 0" axis="0 -1 0" range="-1.16937 4.31096" actuatorfrcrange="-642.88 642.88"/>
+              <geom class="hc20_visual" material="hc20_white" mesh="hc20_link_3_u"/>
+              <geom class="hc20_collision" mesh="hc20_link_3_u_c"/>
+              <body name="hc20_link4" pos="0.88 0 0">
+                <joint name="hc20_joint4" pos="0 0 0" axis="-1 0 0" range="-3.66519 3.66519" actuatorfrcrange="-368.48 368.48"/>
+                <geom class="hc20_visual" material="hc20_white" mesh="hc20_link_4_r"/>
+                <geom class="hc20_collision" mesh="hc20_link_4_r_c"/>
+                <body name="hc20_link5">
+                  <joint name="hc20_joint5" pos="0 0 0" axis="0 -1 0" actuatorfrcrange="-141.12 141.12"/>
+                  <geom class="hc20_visual" material="hc20_white" mesh="hc20_link_5_b"/>
+                  <geom class="hc20_collision" mesh="hc20_link_5_b_c"/>
+                  <body name="hc20_link6">
+                    <joint name="hc20_joint6" pos="0 0 0" axis="-1 0 0" range="-3.66519 3.66519" actuatorfrcrange="-141.12 141.12"/>
+                    <geom class="hc20_visual" material="hc20_white" mesh="hc20_link_6_t"/>
+                    <geom class="hc20_collision" mesh="hc20_link_6_t_c"/>
+                    <body name="hc20_flange" pos="0.2 0 0" quat="0.707105 0 0.707108 0">
+                      <site pos="0.125 0 0" quat="0.707107 0 0.707107 0" size="0.005 0.125" group="3" type="cylinder" rgba="1 0 0 1"/>
+                      <site pos="0 0.125 0" quat="0.707107 0.707107 0 0" size="0.005 0.125" group="3" type="cylinder" rgba="0 1 0 1"/>
+                      <site pos="0 0 0.125" size="0.005 0.125" group="3" type="cylinder" rgba="0 0 1 1"/>
+                      <site name="hc20_flange" pos="0 0 0" quat="1.32679e-06 0 0 1" group="3"/>
+                      <body name="hc20_TCP" quat="1.32679e-06 0 0 1">
+                        <site pos="0.0625 0 0" quat="0.707107 0 0.707107 0" size="0.005 0.0625" group="4" type="cylinder" rgba="1 0 0 1"/>
+                        <site pos="0 0.0625 0" quat="0.707107 0.707107 0 0" size="0.005 0.0625" group="4" type="cylinder" rgba="0 1 0 1"/>
+                        <site pos="0 0 0.0626" size="0.005 0.0625" group="4" type="cylinder" rgba="0 0 1 1"/>
+                        <site name="hc20_TCP" pos="0 0 0" size="0.008" group="4"/>
+                        <camera name="hc20_Robot" pos="0.1 0 0" quat="0 1 0 0"/>
+                      </body>
                     </body>
                   </body>
                 </body>

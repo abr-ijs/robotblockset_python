@@ -25,7 +25,7 @@ from robotblockset.rbs_typing import JointPathType, TimesType
 
 from robotblockset.ros2.controllers_ros2 import JointTrajectoryControllerInterface
 from robotblockset.ros2.robots_ros2 import robot_ros2
-from robotblockset.robot_spec import hc20_spec
+from robotblockset.robot_spec import hc20_spec, hc30_spec
 
 try:
     import rclpy
@@ -51,11 +51,11 @@ except ImportError:
 
 
 # Yaskawa robots
-class hc20(robot_ros2, hc20_spec, robot):
+class yaskawa_ros2(robot_ros2, robot):
     """
-    HC20 collaborative robot class using ROS2 and MotoROS2 interface.
+    Yaskawa collaborative robot class using ROS2 and MotoROS2 interface.
 
-    This class provides a ROS2-based interface to a Yaskawa HC20 robot
+    This class provides a ROS2-based interface to a Yaskawa robot
     using the MotoROS2 driver. It initializes subscriptions to robot status,
     service clients to control trajectory execution modes, and sets up a
     joint trajectory controller interface.
@@ -90,7 +90,7 @@ class hc20(robot_ros2, hc20_spec, robot):
             Name of the ROS2 node (default: ``"hc20"``).
         namespace : str, optional
             Namespace for all robot topics and services. Determines ROS namespace prefix.
-            Default is ``"hc20"``.
+            Default is ``"yaskawa"``.
         tof_topic : str, optional
             Optional topic used to monitor the TOF breach state.
 
@@ -99,8 +99,6 @@ class hc20(robot_ros2, hc20_spec, robot):
         This wrapper always uses the MotoROS2 ``follow_joint_trajectory``
         action and therefore does not support controller strategy switching.
         """
-        hc20_spec.__init__(self)
-        # Initialize robot base class
         robot_ros2.__init__(self, name=name, namespace=namespace, strategy_to_controller_interface_mapping=None, joint_states_topic="joint_states", control_strategy=None)
 
         if RobotStatus is None or StartTrajMode is None:
@@ -823,3 +821,50 @@ class hc20(robot_ros2, hc20_spec, robot):
             extended_msg = hc20._motoros2_selection_result_code_to_str(extended_code)
 
         return f"{standard_msg} | MOTOROS2: {extended_msg} (raw={result})"
+
+class hc20(yaskawa_ros2, hc20_spec):
+    """Robot wrapper for the Yaskawa HC20 manipulator."""
+
+    def __init__(self, robot_name: str = "hc20", namespace: str = "yaskawa", tof_topic: Optional[str] = None) -> None:
+        """Create an HC20 robot in ROS2.
+
+        Parameters
+        ----------
+        robot_name : str, optional
+            Base name of the robot model in ROS2.
+        namespace : str, optional
+            Namespace for all robot topics and services. Determines ROS namespace prefix.
+            Default is ``"yaskawa"``.
+        tof_topic : str, optional
+            Optional topic used to monitor the TOF breach state.
+        **kwargs : Any
+            Additional keyword arguments passed to `yaskawa_ros2`, including
+            optional joint, actuator, flange, TCP, and sensor names.
+        """
+        hc20_spec.__init__(self)
+        yaskawa_ros2.__init__(self, robot_name, namespace=namespace, tof_topic=tof_topic)
+
+
+class hc30(yaskawa_ros2, hc30_spec):
+    """Robot wrapper for the Yaskawa HC30 manipulator."""
+
+    def __init__(self, robot_name: str = "hc30", namespace: str = "yaskawa", tof_topic: Optional[str] = None) -> None:
+        """Create an HC30 robot in ROS2.
+
+        Parameters
+        ----------
+        robot_name : str, optional
+            Base name of the robot model in ROS2.
+        namespace : str, optional
+            Namespace for all robot topics and services. Determines ROS namespace prefix.
+            Default is ``"yaskawa"``.
+        tof_topic : str, optional
+            Optional topic used to monitor the TOF breach state.
+        **kwargs : Any
+            Additional keyword arguments passed to `yaskawa_ros2`, including
+            optional joint, actuator, flange, TCP, and sensor names.
+        """
+        hc30_spec.__init__(self)
+        yaskawa_ros2.__init__(self, robot_name, namespace=namespace, tof_topic=tof_topic)
+
+

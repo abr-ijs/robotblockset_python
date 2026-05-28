@@ -872,8 +872,8 @@ class panda_ros(panda_spec, fr3_spec, robot_ros):
             raise ValueError(f"Frame '{frame}' not supported")
         self.TCP = newTCP
         rx, rJ = self.Kinmodel(self._command.q)
-        self._command.x = self.BaseToWorld(rx)
-        self._command.v = self.BaseToWorld(rJ @ self._command.qdot)
+        self._command.x = rx
+        self._command.v = rJ @ self._command.qdot
 
         if send_to_robot:
             # First stop currently running controller

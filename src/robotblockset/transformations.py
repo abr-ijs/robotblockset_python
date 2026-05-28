@@ -103,6 +103,9 @@ def map_pose(x: ArrayLike = None, T: ArrayLike = None, pa: ArrayLike = None, pRP
     ValueError
         If an unsupported output format is requested.
 
+    Notes
+    -----
+    RPY rotaions are: Rz(rpy[2]) @ Ry(rpy[1]) @ Rx(rpy[0])
     """
     if x is not None:
         x = rbs_type(x)
@@ -677,6 +680,10 @@ def x2prpy(x: ArrayLike) -> np.ndarray:
     -------
     array-like
         position+RPY (6,) or (..., 6)
+
+    Notes
+    -----
+    RPY rotaions are: Rz(rpy[2]) @ Ry(rpy[1]) @ Rx(rpy[0])
     """
     x = rbs_type(x)
     if isvector(x, dim=7):
@@ -825,6 +832,10 @@ def t2prpy(T: ArrayLike, unit: str = "rad") -> np.ndarray:
     -------
     array-like
         Position and RPY Euler angles (6,) or (...,6)
+
+    Notes
+    -----
+    RPY rotaions are: Rz(rpy[2]) @ Ry(rpy[1]) @ Rx(rpy[0])
     """
     T = rbs_type(T)
     if check_shape(T, shape=(4, 4)):
@@ -847,6 +858,10 @@ def q2rpy(Q: ArrayLike, unit: str = "rad") -> np.ndarray:
     -------
     array-like
         RPY Euler angles (3,) or (..., 3)
+
+    Notes
+    -----
+    RPY rotaions are: Rz(rpy[2]) @ Ry(rpy[1]) @ Rx(rpy[0])
     """
     _fac = getunit(unit=unit)
     Q = rbs_type(Q)
@@ -887,6 +902,10 @@ def r2rpy(R: ArrayLike, unit: str = "rad") -> np.ndarray:
     -------
     array-like
         RPY Euler angles (3,) or (..., 3)
+
+    Notes
+    -----
+    RPY rotaions are: Rz(rpy[2]) @ Ry(rpy[1]) @ Rx(rpy[0])
     """
     _Q = r2q(R)
     return q2rpy(_Q, unit=unit)
@@ -898,18 +917,11 @@ def rpy2q(rpy: ArrayLike, out: str = "Q", unit: str = "rad") -> Union[Quaternion
     Parameters
     ----------
     rpy : ArrayLike
-        Euler angles Roll or RPY
+        Euler angles Roll or RPY 
     out : str, optional
         output form (``R``: rotation matrix, ``Q``: quaternion)
     unit : str, optional
         angular unit (``rad`` or ``deg``)
-
-    Args
-    ----
-    p : float or array-like, optional
-        Euler angle pitch
-    y : float or array-like, optional
-        Euler angle yaw
 
     Returns
     -------
@@ -920,6 +932,10 @@ def rpy2q(rpy: ArrayLike, out: str = "Q", unit: str = "rad") -> Union[Quaternion
     ------
     TypeError
         Not supported input or output form
+
+    Notes
+    -----
+    RPY rotaions are: Rz(rpy[2]) @ Ry(rpy[1]) @ Rx(rpy[0])
     """
     rpy = rbs_type(rpy)
     _fac = getunit(unit=unit)
@@ -975,6 +991,10 @@ def rpy2r(rpy: ArrayLike, unit: str = "rad") -> RotationMatricesType:
     ------
     ValueError
         Not supported output form
+
+    Notes
+    -----
+    RPY rotaions are: Rz(rpy[2]) @ Ry(rpy[1]) @ Rx(rpy[0])
     """
     return rpy2q(rpy, out="R", unit=unit)
 
@@ -994,6 +1014,10 @@ def prpy2t(prpy: ArrayLike, unit: str = "rad") -> HomogeneousMatricesType:
     -------
     HomogeneousMatricesType
         Homogeneous transformation matrix with shape ``(..., 4, 4)``.
+
+    Notes
+    -----
+    RPY rotaions are: Rz(rpy[2]) @ Ry(rpy[1]) @ Rx(rpy[0])
     """
     prpy = rbs_type(prpy)
     return map_pose(p=prpy[..., :3], RPY=prpy[..., 3:], out="T", unit=unit)
@@ -1021,6 +1045,10 @@ def prpy2x(prpy: ArrayLike, unit: str = "rad") -> Poses3DType:
     ------
     ValueError
         Not supported output form
+
+    Notes
+    -----
+    RPY rotaions are: Rz(rpy[2]) @ Ry(rpy[1]) @ Rx(rpy[0])
     """
     prpy = rbs_type(prpy)
     return map_pose(p=prpy[..., :3], RPY=prpy[..., 3:], out="x", unit=unit)
@@ -1758,7 +1786,7 @@ def invskew(S: RotationMatrixType) -> Vector3DType:
 def qerr(Q2: ArrayLike, *Q1: ArrayLike) -> Vectors3DType:
     """Error of quaternions
 
-    Angle between Q2 and Q1. If Q1 is ommited then Q2 is comapred
+    Error (axis/angle) between Q2 and Q1. If Q1 is ommited then Q2 is comapred
     to unit quaternion
 
     Parameters
@@ -1781,7 +1809,6 @@ def qerr(Q2: ArrayLike, *Q1: ArrayLike) -> Vectors3DType:
     Q2 = np.array(Q2)
     Q2 = uniqueQuaternionPath(Q2)
     if len(Q1) == 0:
-        Q2 = uniqueQuaternionPath(Q2)
         return 2 * qlog(Q2)[..., 1:]
     else:
         Q1 = uniqueQuaternionPath(np.array(Q1[0]))

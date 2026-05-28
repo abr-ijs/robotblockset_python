@@ -17,7 +17,7 @@ from copy import deepcopy
 from robotblockset.tools import isvector, vector, find_rows
 from robotblockset.transformations import map_pose, r2q, checkx, world2frame
 from robotblockset.mujoco.mujoco_api import mjInterface
-from robotblockset.robot_spec import panda_spec, fr3_spec, lwr_spec, iiwa_spec, ur10_spec, ur10e_spec, ur5_spec, ur5e_spec, crx20_spec, hc20_spec, z1_spec, b2_spec
+from robotblockset.robot_spec import panda_spec, fr3_spec, lwr_spec, iiwa_spec, ur10_spec, ur10e_spec, ur5_spec, ur5e_spec, crx20_spec, hc20_spec, hc30_spec, z1_spec, b2_spec
 from robotblockset.robots import robot, MotionResultCodes, CommandModeCodes
 from robotblockset.rbs_typing import ArrayLike, HomogeneousMatrixType, JointConfigurationType, JointTorqueType, JointVelocityType, Pose3DType, QuaternionType, RotationMatrixType, Vector3DType
 
@@ -976,6 +976,16 @@ class hc20(robot_mujoco, hc20_spec):
     def __init__(self, robot_name: str = "hc20", **kwargs: Any) -> None:
         """Create an HC20 robot in MuJoCo."""
         hc20_spec.__init__(self)
+        kwargs.setdefault("host", "localhost")
+        robot_mujoco.__init__(self, robot_name, **kwargs)
+
+
+class hc30(robot_mujoco, hc30_spec):
+    """MuJoCo robot wrapper for the Yaskawa HC30 manipulator."""
+
+    def __init__(self, robot_name: str = "hc30", **kwargs: Any) -> None:
+        """Create an HC30 robot in MuJoCo."""
+        hc30_spec.__init__(self)
         kwargs.setdefault("host", "localhost")
         robot_mujoco.__init__(self, robot_name, **kwargs)
 

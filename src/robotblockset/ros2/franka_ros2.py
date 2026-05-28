@@ -13,17 +13,21 @@ from __future__ import annotations
 
 import numpy as np
 from time import sleep
+from typing import Any
 
 from robotblockset.tools import check_option, isscalar, isvector, vector, matrix
 import rclpy
 from robotblockset.robot_spec import fr3_spec
+from robotblockset.rbs_typing import ArrayLike
 from robotblockset.transformations import map_pose
 from geometry_msgs.msg import WrenchStamped
 from robotblockset.ros2.controllers_ros2 import CsfCartesianImpedanceControllerInterface, JointPositionControllerInterface, JointTrajectoryControllerInterface
 from robotblockset.ros2.robots_ros2 import robot_ros2
-from franka_msgs.srv import SetLoad, SetTCPFrame
+from franka_msgs.srv import SetLoad, SetTCPFrame, SetFullCollisionBehavior
 
+from rclpy.action import ActionClient
 from rclpy.qos import qos_profile_sensor_data
+from franka_msgs.action import ErrorRecovery as ErrorRecoveryAction
 import time
 
 
@@ -43,6 +47,7 @@ class fr3(robot_ros2, fr3_spec):
             Kr=np.array([30.0, 30.0, 30.0]),
             R=np.eye(3),
             D=2.0,
+            command_frame=f"{name}_link8",
         )
 
         joint_position_trajectory_controller = JointTrajectoryControllerInterface(ros_plugin_name="fr3_arm_controller", topic="joint_trajectory", action="follow_joint_trajectory", namespace=ns)
@@ -63,6 +68,9 @@ class fr3(robot_ros2, fr3_spec):
         )
 
         self.SIM = SIM
+        
+        # Initialize collision behavior tracking
+        self._collision_behavior = None
 
         if not self.SIM:
             # Add wrench state subscription
@@ -76,6 +84,16 @@ class fr3(robot_ros2, fr3_spec):
             self._set_tcp_frame_client = self._node.create_client(SetTCPFrame, f"{self._namespace}/service_server/set_tcp_frame")
             while not self._set_tcp_frame_client.wait_for_service(timeout_sec=1.0):
                 self.Message(f"Service {self._namespace}/service_server/set_tcp_frame not available, waiting...", 1)
+
+            # Collision behavior service client
+            self._set_collision_behavior_client = self._node.create_client(SetFullCollisionBehavior, f"{self._namespace}/service_server/set_full_collision_behavior")
+            while not self._set_collision_behavior_client.wait_for_service(timeout_sec=1.0):
+                self.Message(f"Service {self._namespace}/service_server/set_full_collision_behavior not available, waiting...", 1)
+
+            # Error recovery action client
+            self._error_recovery_client = ActionClient(self._node, ErrorRecoveryAction, f"{self._namespace}/action_server/error_recovery")
+            while not self._error_recovery_client.wait_for_server(timeout_sec=1.0):
+                self.Message(f"Action server {self._namespace}/action_server/error_recovery not available, waiting...", 1)
 
         # Start spinning only after all publishers/subscribers/clients are created
         self._start_spinning(wait_for_state=True)
@@ -93,6 +111,216 @@ class fr3(robot_ros2, fr3_spec):
     def shutdown(self) -> None:
         """Shut down the ROS 2 robot wrapper and its background spinner."""
         self.Shutdown()
+
+    def GetFullCollisionBehavior(self) -> dict | None:
+        """Get the current collision behavior thresholds tracked internally.
+
+        Returns the collision behavior that was set via ``SetFullCollisionBehavior``.
+        Does not query the robot, so only returns values that have been set through
+        this interface. If collision behavior has not been set internally, returns ``None``.
+
+        Returns
+        -------
+        dict or None
+            Dictionary with keys:
+            - ``'lower_torque_acc'``: Contact torque thresholds during acceleration (list of 7 floats)
+            - ``'upper_torque_acc'``: Collision torque thresholds during acceleration (list of 7 floats)
+            - ``'lower_torque_nom'``: Contact torque thresholds during constant-velocity (list of 7 floats)
+            - ``'upper_torque_nom'``: Collision torque thresholds during constant-velocity (list of 7 floats)
+            - ``'lower_force_acc'``: Contact force/torque thresholds during acceleration (list of 6 floats)
+            - ``'upper_force_acc'``: Collision force/torque thresholds during acceleration (list of 6 floats)
+            - ``'lower_force_nom'``: Contact force/torque thresholds during constant-velocity (list of 6 floats)
+            - ``'upper_force_nom'``: Collision force/torque thresholds during constant-velocity (list of 6 floats)
+            
+            Returns ``None`` if collision behavior has not been set via ``SetFullCollisionBehavior``.
+            Note: This only tracks values set through this interface; values set externally via ROS
+            are not reflected here.
+        """
+        if self._collision_behavior is None:
+            self.Message("GetFullCollisionBehavior: No collision behavior set internally", 1)
+            return None
+        return self._collision_behavior
+
+    def SetFullCollisionBehavior(
+        self,
+        *,
+        lower_torque_acc: ArrayLike = (25.0, 25.0, 22.0, 20.0, 19.0, 17.0, 14.0),
+        upper_torque_acc: ArrayLike = (35.0, 35.0, 32.0, 30.0, 29.0, 27.0, 24.0),
+        lower_torque_nom: ArrayLike = (25.0, 25.0, 22.0, 20.0, 19.0, 17.0, 14.0),
+        upper_torque_nom: ArrayLike = (35.0, 35.0, 32.0, 30.0, 29.0, 27.0, 24.0),
+        lower_force_acc: ArrayLike = (30.0, 30.0, 30.0, 25.0, 25.0, 25.0),
+        upper_force_acc: ArrayLike = (40.0, 40.0, 40.0, 35.0, 35.0, 35.0),
+        lower_force_nom: ArrayLike = (30.0, 30.0, 30.0, 25.0, 25.0, 25.0),
+        upper_force_nom: ArrayLike = (40.0, 40.0, 40.0, 35.0, 35.0, 35.0),
+    ) -> int:
+        """Set separate torque and force collision thresholds for acceleration and nominal phases.
+
+        Wraps ``franka::Robot::setCollisionBehavior`` (8-argument overload) via the
+        ROS 2 service ``/service_server/set_full_collision_behavior``.
+
+        Forces or torques between the *lower* and *upper* threshold are reported as
+        **contacts** in ``RobotState``.  Values that exceed the *upper* threshold are
+        registered as a **collision** and cause the robot to stop moving.
+        Call ``automaticErrorRecovery`` (or the equivalent ROS 2 service) to resume
+        after a collision.
+
+        Parameters
+        ----------
+        lower_torque_acc : ArrayLike, length 7
+            Contact torque thresholds during acceleration/deceleration for each
+            joint in Nm.  Default: ``(25, 25, 22, 20, 19, 17, 14)``.
+        upper_torque_acc : ArrayLike, length 7
+            Collision torque thresholds during acceleration/deceleration for each
+            joint in Nm.  Default: ``(35, 35, 32, 30, 29, 27, 24)``.
+        lower_torque_nom : ArrayLike, length 7
+            Contact torque thresholds during constant-velocity motion for each
+            joint in Nm.  Default: ``(25, 25, 22, 20, 19, 17, 14)``.
+        upper_torque_nom : ArrayLike, length 7
+            Collision torque thresholds during constant-velocity motion for each
+            joint in Nm.  Default: ``(35, 35, 32, 30, 29, 27, 24)``.
+        lower_force_acc : ArrayLike, length 6
+            Contact force/torque thresholds during acceleration/deceleration for
+            ``(x, y, z)`` in N and ``(R, P, Y)`` in Nm.
+            Default: ``(30, 30, 30, 25, 25, 25)``.
+        upper_force_acc : ArrayLike, length 6
+            Collision force/torque thresholds during acceleration/deceleration for
+            ``(x, y, z)`` in N and ``(R, P, Y)`` in Nm.
+            Default: ``(40, 40, 40, 35, 35, 35)``.
+        lower_force_nom : ArrayLike, length 6
+            Contact force/torque thresholds during constant-velocity motion for
+            ``(x, y, z)`` in N and ``(R, P, Y)`` in Nm.
+            Default: ``(30, 30, 30, 25, 25, 25)``.
+        upper_force_nom : ArrayLike, length 6
+            Collision force/torque thresholds during constant-velocity motion for
+            ``(x, y, z)`` in N and ``(R, P, Y)`` in Nm.
+            Default: ``(40, 40, 40, 35, 35, 35)``.
+
+        Returns
+        -------
+        int
+            ``0`` on success, ``-1`` on failure.
+
+        Raises
+        ------
+        RuntimeError
+            If called in simulation mode.
+        ValueError
+            If a threshold array does not have the required length.
+
+        See Also
+        --------
+        https://frankarobotics.github.io/libfranka/latest/classfranka_1_1Robot.html
+        """
+
+        if self.SIM:
+            self.Message("SetFullCollisionBehavior: Not available in SIM mode", 1)
+            return 0
+
+        def _AsFloatList(x: ArrayLike, n: int, name: str) -> list[float]:
+            vals = list(x)
+            if len(vals) != n:
+                raise ValueError(f"{name} must have length {n}, got {len(vals)}")
+            return [float(v) for v in vals]
+
+        request = SetFullCollisionBehavior.Request()
+        request.lower_torque_thresholds_acceleration = _AsFloatList(lower_torque_acc, 7, "lower_torque_acc")
+        request.upper_torque_thresholds_acceleration = _AsFloatList(upper_torque_acc, 7, "upper_torque_acc")
+        request.lower_torque_thresholds_nominal = _AsFloatList(lower_torque_nom, 7, "lower_torque_nom")
+        request.upper_torque_thresholds_nominal = _AsFloatList(upper_torque_nom, 7, "upper_torque_nom")
+        request.lower_force_thresholds_acceleration = _AsFloatList(lower_force_acc, 6, "lower_force_acc")
+        request.upper_force_thresholds_acceleration = _AsFloatList(upper_force_acc, 6, "upper_force_acc")
+        request.lower_force_thresholds_nominal = _AsFloatList(lower_force_nom, 6, "lower_force_nom")
+        request.upper_force_thresholds_nominal = _AsFloatList(upper_force_nom, 6, "upper_force_nom")
+
+        self._control_helper.deactivate(self.controller._ros_plugin_name)
+        future = self._set_collision_behavior_client.call_async(request)
+        while rclpy.ok() and not future.done():
+            sleep(0.01)
+        self._control_helper.activate(self.controller._ros_plugin_name)
+        if future.done() and future.result() is not None:
+            # Store the collision behavior state internally
+            self._collision_behavior = {
+                'lower_torque_acc': request.lower_torque_thresholds_acceleration,
+                'upper_torque_acc': request.upper_torque_thresholds_acceleration,
+                'lower_torque_nom': request.lower_torque_thresholds_nominal,
+                'upper_torque_nom': request.upper_torque_thresholds_nominal,
+                'lower_force_acc': request.lower_force_thresholds_acceleration,
+                'upper_force_acc': request.upper_force_thresholds_acceleration,
+                'lower_force_nom': request.lower_force_thresholds_nominal,
+                'upper_force_nom': request.upper_force_thresholds_nominal,
+            }
+            self.Message("SetFullCollisionBehavior: Collision behavior updated", 2)
+            return 0
+        else:
+            self.Message(f"SetFullCollisionBehavior: Service call failed {future.exception()}", 0)
+            return -1
+
+    def ErrorRecovery(self) -> int:
+        """Trigger automatic error recovery on the robot.
+
+        Sends an ``ErrorRecovery`` goal to ``/action_server/error_recovery``
+        to reset the robot after a collision or error has been detected.
+        Equivalent to ``franka::Robot::automaticErrorRecovery``.
+
+        Returns
+        -------
+        int
+            ``0`` on success, ``-1`` on failure.
+        """
+        if self.SIM:
+            self.Message("ErrorRecovery: Not available in SIM mode", 1)
+            return -1
+        
+        goal_handle_future = self._error_recovery_client.send_goal_async(ErrorRecoveryAction.Goal())
+        while rclpy.ok() and not goal_handle_future.done():
+            sleep(0.01)
+        if not goal_handle_future.done() or goal_handle_future.result() is None:
+            self.Message("ErrorRecovery: Goal rejected or server unavailable", 0)
+            return -1
+        goal_handle = goal_handle_future.result()
+        if not goal_handle.accepted:
+            self.Message("ErrorRecovery: Goal rejected by action server", 0)
+            return -1
+        result_future = goal_handle.get_result_async()
+        while rclpy.ok() and not result_future.done():
+            sleep(0.01)
+        if result_future.done() and result_future.result() is not None:
+            self.Message("ErrorRecovery: Robot error recovered", 2)
+            
+            # Hardware may be in unconfigured state after error recovery.
+            # Properly configure and activate the hardware interface.
+            if not self._control_helper.configure_hardware("FrankaHardwareInterface"):
+                self.Message("ErrorRecovery: Failed to configure hardware", 0)
+                return -1
+            self.Message("ErrorRecovery: Hardware configured", 2)
+            
+            if not self._control_helper.activate_hardware("FrankaHardwareInterface"):
+                self.Message("ErrorRecovery: Failed to activate hardware", 0)
+                return -1
+            self.Message("ErrorRecovery: Hardware activated", 2)
+
+            # Ensure controller is operational after hardware reactivation.
+            ctrl_name = self.controller._ros_plugin_name
+            ctrl_state = self._control_helper.get_state(ctrl_name)
+            if ctrl_state == "active":
+                # Force a restart cycle now that command interfaces are available.
+                if not self._control_helper.deactivate(ctrl_name):
+                    self.Message("ErrorRecovery: Failed to deactivate controller after hardware activation", 0)
+                    return -1
+                if not self._control_helper.activate(ctrl_name):
+                    self.Message("ErrorRecovery: Failed to reactivate controller after restart", 0)
+                    return -1
+            else:
+                if not self._control_helper.activate(ctrl_name):
+                    self.Message("ErrorRecovery: Failed to activate controller", 0)
+                    return -1
+            self.Message("ErrorRecovery: Controller ready", 2)
+            
+            self.Message("ErrorRecovery: Recovery complete", 2)
+            return 0
+        else:
+            self.Message(f"ErrorRecovery: Failed {result_future.exception()}", 0)
+            return -1
 
     def SetLoad(self, mass: float, COM: tuple = [0, 0, 0], inertia: tuple = None) -> int:
         """Update the load configuration on the physical robot."""
@@ -113,7 +341,6 @@ class fr3(robot_ros2, fr3_spec):
 
         self._control_helper.deactivate(self.controller._ros_plugin_name)
         future = self._set_load_client.call_async(request)
-        # Avoid nested spinning (we already have a background spinner); wait until done
         while rclpy.ok() and not future.done():
             sleep(0.01)
         self._control_helper.activate(self.controller._ros_plugin_name)
@@ -150,8 +377,8 @@ class fr3(robot_ros2, fr3_spec):
             raise ValueError(f"Frame '{frame}' not supported")
         self.TCP = newTCP
         rx, rJ = self.Kinmodel(self._command.q)
-        self._command.x = self.BaseToWorld(rx)
-        self._command.v = self.BaseToWorld(rJ @ self._command.qdot)
+        self._command.x = rx
+        self._command.v = srJ @ self._command.qdot
 
         if send_to_robot:
             return self._set_tcp_frame(newTCP)
@@ -174,7 +401,6 @@ class fr3(robot_ros2, fr3_spec):
 
         self._control_helper.deactivate(self.controller._ros_plugin_name)
         future = self._set_tcp_frame_client.call_async(request)
-        # Avoid nested spinning (we already have a background spinner); wait until done
         while rclpy.ok() and not future.done():
             sleep(0.01)
         self._control_helper.activate(self.controller._ros_plugin_name)

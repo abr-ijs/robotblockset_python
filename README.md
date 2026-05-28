@@ -102,10 +102,18 @@ Recommended Python version: **Python 3.10+**.
 
 ### Base installation
 
-From a downloaded release wheel from [repo.ijs.si](https://repo.ijs.si/leon/robotblockset_python/-/releases):
+From a downloaded release wheel from the GitHub repository:
+
+https://github.com/abr-ijs/robotblockset_python/releases
 
 ```bash
 pip install <downloaded-wheel>.whl
+```
+
+From PyPI:
+
+```bash
+pip install robotblockset
 ```
 
 From this repository:
@@ -121,8 +129,9 @@ The base package installs the dependencies used by the core tutorials and utilit
 - `matplotlib>=3.7.5`
 - `scipy`
 - `sympy`
+- `ruckig`
 - `pyyaml`
--   `mujoco`
+- `mujoco`
 - `mediapy`
 - `ipython`
 
@@ -338,7 +347,8 @@ pip install pyspacemouse easyhid
 
 On Windows, you may also need `hidapi.dll` available on `PATH`.
 
-On Linux, if the device is detected but cannot be opened, create an appropriate `udev` rule, reload the rules, and ensure your user belongs to the `input` group.
+On Linux, if the device is detected but cannot be opened, create an appropriate `udev` rule, reload the rules, and ensure your user belongs to the `input` group. You will also need to install `libhidapi-dev` package.
+
 
 #### Other useful packages
 
@@ -362,15 +372,18 @@ RBS provides several tutorial notebooks in `robotblockset/tutorials`, which can 
 - `tutorial_multi_robots`
 - `tutorial_kinematic_models`
 - `tutorial_optimal_trajectory`
+- `tutorial_robot_path_and_trajectory_generation`
 - `tutorial_generation_collision-free_trajectories`
 - `tutorial_image_video_pymujoco`
 - `tutorial_mujoco`
+- `tutorial_custom_controller_pymujoco`
 - `tutorial_generate_MJCF_scene`
 - `tutorial_genesis`
 - `tutorial_graphics`
 - `tutorial_franka_pandapy`
 - `tutorial_franka_ros2`
 - `tutorial_rbf`
+- `tutorial_robotiq_gripper`
 - `tutorial_ur_rtde`
 - `tutorial_calibrate_camera_charuco`
 - `tutorial_calibrate_camera_checker`

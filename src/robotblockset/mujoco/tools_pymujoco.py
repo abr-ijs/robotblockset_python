@@ -1031,6 +1031,30 @@ def check_path_for_collisions(path: np.ndarray, robot: Any, clearance: float = 0
         )
 
 
+def get_actuator_range(model: mujoco.MjModel, actuator_name: Union[int, str]) -> np.ndarray:
+    """
+    Retrieves the control range of a specific actuator in the MuJoCo model.
+
+    The control range defines the minimum and maximum values that can be applied
+    to the actuator during the simulation. This function supports retrieving
+    the control range using either the actuator's index or its name.
+
+    Parameters
+    ----------
+    model : mujoco.MjModel
+        The MuJoCo model object from which to retrieve the actuator's control range.
+    actuator_name : Union[int, str]
+        The identifier of the actuator for which the control range is to be retrieved.
+        This can be either the actuator's index (int) or name (str).
+
+    Returns
+    -------
+    np.ndarray
+        An array containing the control range [min, max] for the specified actuator.
+    """
+    return model.actuator(actuator_name).ctrlrange
+
+
 def make_free_camera(model: mujoco.MjModel, azimuth: float = 140.0, elevation: float = -20.0, distance: Optional[float] = None, lookat: Optional[Sequence[float]] = None, fovy: Optional[float] = None) -> mujoco.MjvCamera:
     """
     Create a configured FREE camera for use with `mujoco.Renderer.update_scene`.
@@ -1070,28 +1094,212 @@ def make_free_camera(model: mujoco.MjModel, azimuth: float = 140.0, elevation: f
     return cam
 
 
-def get_actuator_range(model: mujoco.MjModel, actuator_name: Union[int, str]) -> np.ndarray:
+def compute_camera_matrix(renderer: mujoco.Renderer, model: mujoco.MjModel, data: mujoco.MjData, camera: mujoco.MjvCamera) -> np.ndarray:
     """
-    Retrieves the control range of a specific actuator in the MuJoCo model.
-
-    The control range defines the minimum and maximum values that can be applied
-    to the actuator during the simulation. This function supports retrieving
-    the control range using either the actuator's index or its name.
+    Returns the 3x4 camera matrix.
 
     Parameters
     ----------
-    model : mujoco.MjModel
-        The MuJoCo model object from which to retrieve the actuator's control range.
-    actuator_name : Union[int, str]
-        The identifier of the actuator for which the control range is to be retrieved.
-        This can be either the actuator's index (int) or name (str).
+      renderer : mujoco.Renderer
+          Renderer instance (used for width/height and to access scene.camera).
+      model : mujoco.MjModel
+          mujoco.MjModel (used for FOV from model.vis.global_.fovy).
+      data : mujoco.MjData
+          mujoco.MjData (passed to renderer.update_scene).
+      camera : mujoco.MjvCamera
+          Camera object (used to update the scene and extract position/orientation).
+
+      Returns
+      -------
+      np.ndarray
+          3x4 camera projection matrix that maps world points to image coordinates.
+    """
+    # If the camera is a 'free' camera, we get its position and orientation
+    # from the scene data structure. It is a stereo camera, so we average over
+    # the left and right channels. Note: we call `self.update()` in order to
+    # ensure that the contents of `scene.camera` are correct.
+    renderer.update_scene(data, camera=camera)
+    pos = np.mean([camera.pos for camera in renderer.scene.camera], axis=0)
+    z = -np.mean([camera.forward for camera in renderer.scene.camera], axis=0)
+    y = np.mean([camera.up for camera in renderer.scene.camera], axis=0)
+    rot = np.vstack((np.cross(y, z), y, z))
+    fov = model.vis.global_.fovy
+
+    # Translation matrix (4x4).
+    translation = np.eye(4)
+    translation[0:3, 3] = -pos
+
+    # Rotation matrix (4x4).
+    rotation = np.eye(4)
+    rotation[0:3, 0:3] = rot
+
+    # Focal transformation matrix (3x4).
+    focal_scaling = (1.0 / np.tan(np.deg2rad(fov) / 2)) * renderer.height / 2.0
+    focal = np.diag([-focal_scaling, focal_scaling, 1.0, 0])[0:3, :]
+
+    # Image matrix (3x3).
+    image = np.eye(3)
+    image[0, 2] = (renderer.width - 1) / 2.0
+    image[1, 2] = (renderer.height - 1) / 2.0
+    return image @ focal @ rotation @ translation
+
+
+def project_to_camera_view(pts: np.ndarray, camera_matrix: np.ndarray) -> np.ndarray:
+    """
+    Project 3D world points to 2D image coordinates using camera matrix.
+
+    Parameters
+    ----------
+        pts: 3D points with shape (n, 3) where each row is a point [x, y, z]
+        camera_matrix: Camera matrix with shape (3, 4)
 
     Returns
     -------
     np.ndarray
-        An array containing the control range [min, max] for the specified actuator.
+        Array of projected 2D image coordinates with shape (n, 2).
     """
-    return model.actuator(actuator_name).ctrlrange
+    if camera_matrix.shape == (4, 4):
+        camera_matrix = camera_matrix[:3, :]
+
+    # Create homogeneous coordinates [x, y, z, 1]
+    pts_homogenous = np.ones((pts.shape[0], 4), dtype=float)
+    pts_homogenous[:, :3] = pts
+
+    # Project world coordinates to pixel space using camera matrix
+    xs, ys, s = camera_matrix @ pts_homogenous.T
+
+    # Normalize by the scaling factor to get pixel coordinates
+    x = xs / s
+    y = ys / s
+
+    return np.array((x, y))
+
+
+def compute_camera_matrix_from_free_camera(cam: mujoco.MjvCamera, model: mujoco.MjModel, height: int, width: int) -> np.ndarray:
+    """
+    Compute the 3x4 camera projection matrix for a free camera created with make_free_camera.
+
+    This function computes the camera matrix directly from the MjvCamera parameters without
+    requiring a renderer instance.
+
+    Parameters
+    ----------
+    cam : mujoco.MjvCamera
+        The free camera object created with make_free_camera.
+    model : mujoco.MjModel
+        The MuJoCo model (used for FOV from model.vis.global_.fovy).
+    height : int
+        The image height in pixels, e.g. ``renderer.height``.
+    width : int
+        The image width in pixels, e.g. ``renderer.width``.
+
+    Returns
+    -------
+    np.ndarray
+        3x4 camera projection matrix that maps world points to image coordinates.
+    """
+    # Match MuJoCo's mjv_cameraFrame convention for FREE/TRACKING cameras.
+    azimuth_rad = np.radians(cam.azimuth)
+    elevation_rad = np.radians(cam.elevation)
+    distance = np.float32(cam.distance)
+    lookat = np.array(cam.lookat, dtype=np.float32)
+
+    ca = np.cos(azimuth_rad)
+    sa = np.sin(azimuth_rad)
+    ce = np.cos(elevation_rad)
+    se = np.sin(elevation_rad)
+
+    forward = np.array([ce * ca, ce * sa, se], dtype=np.float32)
+    up = np.array([-se * ca, -se * sa, ce], dtype=np.float32)
+    pos = lookat - distance * forward
+
+    # Camera coordinate system: x=right, y=up, z=-forward
+    z = -forward
+    y = up
+    x = np.cross(y, z)
+
+    # Rotation matrix (world to camera)
+    rot = np.vstack((x, y, z))
+
+    # Translation matrix
+    translation = np.eye(4)
+    translation[0:3, 3] = -pos
+
+    # Rotation matrix
+    rotation = np.eye(4)
+    rotation[0:3, 0:3] = rot
+
+    # Focal transformation matrix
+    fov = model.vis.global_.fovy
+    focal_scaling = (1.0 / np.tan(np.deg2rad(fov) / 2.0)) * height / 2.0
+    focal = np.zeros((3, 4))
+    focal[0, 0] = -focal_scaling  # negative for left-handed coordinate system
+    focal[1, 1] = focal_scaling
+    focal[2, 2] = 1.0
+
+    # Image transformation matrix (principal point)
+    image = np.eye(3)
+    image[0, 2] = (width - 1) / 2.0  # principal point x
+    image[1, 2] = (height - 1) / 2.0  # principal point y
+
+    # Final projection matrix: image @ focal @ rotation @ translation
+    return image @ focal @ rotation @ translation
+
+
+def add_visual_capsule(scene: mujoco.MjvScene, point1: Sequence[float], point2: Sequence[float], radius: float, rgba: np.ndarray) -> None:
+    """Add a visual capsule between two points in an mjvScene.
+
+    Parameters
+    ----------
+    scene : mujoco.MjvScene
+        Scene object to modify.
+    point1 : Sequence[float]
+        World-space coordinates of the capsule start point.
+    point2 : Sequence[float]
+        World-space coordinates of the capsule end point.
+    radius : float
+        Capsule radius in world units.
+    rgba : np.ndarray
+        Color and alpha for the capsule, shape ``(4,)``.
+    """
+    if scene.ngeom >= scene.maxgeom:
+        return
+    scene.ngeom += 1  # increment ngeom
+    # initialise a new capsule, add it to the scene using mjv_connector
+    mujoco.mjv_initGeom(
+        scene.geoms[scene.ngeom - 1],
+        mujoco.mjtGeom.mjGEOM_CAPSULE,
+        np.zeros(3),
+        np.zeros(3),
+        np.zeros(9),
+        rgba.astype(np.float32),
+    )
+    mujoco.mjv_connector(
+        scene.geoms[scene.ngeom - 1],
+        mujoco.mjtGeom.mjGEOM_CAPSULE,
+        radius,
+        point1,
+        point2,
+    )
+
+
+def add_path_to_scene(scene: mujoco.MjvScene, path: np.ndarray, width: float = 0.001, rgba: Sequence[float] = (1.0, 0.0, 0.0, 1.0)) -> None:
+    """Draw a path trace in an mjvScene using a chain of capsules.
+
+    Parameters
+    ----------
+    scene : mujoco.MjvScene
+        Scene object to modify.
+    path : np.ndarray
+        Path points in world coordinates with shape ``(n, 3)``.
+    width : float, optional
+        Capsule radius used for each segment.
+    rgba : Sequence[float], optional
+        Color and alpha for the path capsules.
+    """
+    for i in range(path.shape[0] - 1):
+        radius = width
+        add_visual_capsule(scene, path[i], path[i + 1], radius, np.asarray(rgba, dtype=np.float32))
 
 
 def print_body_tree_model(model: mujoco.MjModel, parent: Union[int, str], level: int = 0) -> None:
